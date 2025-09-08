@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+
+# Generated files
+*.min.js
+*.min.css
+
+# Package files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment files
+.env
+.env.*
+
+# Logs
+*.log
+
+# Cache
+.cache/
+.vite/
+
+# Coverage
+coverage/
+
+# Documentation
+CHANGELOG.md
+
+# Public assets (often auto-generated or binary)
+public/
+
+# Config files that should maintain specific formatting
+.gitignore
