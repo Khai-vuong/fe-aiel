@@ -1,9 +1,11 @@
+import { router } from './routers';
+import { RouterProvider } from 'react-router-dom';
+
 function App() {
   return (
     <>
-      <div className="p-2 bg-red-200">Hello</div>
+      <RouterProvider router={router} />
     </>
   );
 }
-
 export default App;
