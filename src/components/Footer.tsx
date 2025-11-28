@@ -1,9 +1,7 @@
-export function Footer() {
+export default function Footer() {
   return (
-    <footer className="bg-blue-400 text-black p-4">
-      <div className="container mx-auto text-center">
-        <p>&copy; 2025 My Website. All rights reserved.</p>
-      </div>
+    <footer className="bg-gray-800 text-white text-center py-4 mt-20">
+      <p>© 2025 TKEDU - E-learning Platform</p>
     </footer>
   );
 }
