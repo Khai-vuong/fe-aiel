@@ -1,29 +1,55 @@
 import { useEffect, useState } from 'react';
 
 export default function StudentProfile() {
-  const [isEditing, setIsEditing] = useState(false);
-
-  const [student, setStudent] = useState({
-    sid: 'STU001',
-    name: 'Nguyen Van A',
-    username: 'vana',
-    email: 'vana@example.com',
-    phone: '0123456789',
-    major: 'Computer Science',
-  });
-
-  const [editData, setEditData] = useState(student);
+  const [loading, setLoading] = useState(true);
+  const [student, setStudent] = useState<any>(null);
 
   useEffect(() => {
-    if (isEditing) {
-      setEditData(student);
-    }
-  }, [isEditing, student]);
+    const fetchProfile = async () => {
+      const token = localStorage.getItem('token');
 
-  const handleSave = () => {
-    setStudent(editData);
-    setIsEditing(false);
-  };
+      if (!token) {
+        alert('Bạn chưa đăng nhập!');
+        window.location.href = '/login';
+        return;
+      }
+
+      try {
+        const res = await fetch('http://localhost:3000/users/profile', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) throw new Error();
+
+        const data = await res.json();
+        console.log('PROFILE DATA:', data);
+
+        setStudent({
+          sid: data.student?.sid ?? 'N/A',
+          name: data.student?.name ?? 'N/A',
+          username: data.username ?? 'N/A',
+          major: data.student?.major ?? 'N/A',
+
+          // API không trả -> gán N/A
+          phone: data.student?.personal_info_json?.phone ?? 'N/A',
+          address: data.student?.personal_info_json?.address ?? 'N/A',
+        });
+
+        setLoading(false);
+      } catch (err) {
+        alert('Không thể lấy dữ liệu hồ sơ!');
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  if (loading) return <p className="text-center mt-10">Đang tải dữ liệu...</p>;
+
+  if (!student) return <p className="text-center mt-10">Không có dữ liệu.</p>;
 
   return (
     <div className="min-h-screen bg-[#F5F7FA] px-6 py-10">
@@ -32,104 +58,22 @@ export default function StudentProfile() {
           Student Profile
         </h1>
 
-        {!isEditing && (
-          <div className="space-y-4 text-gray-700">
-            <InfoRow label="Student ID" value={student.sid} />
-            <InfoRow label="Full Name" value={student.name} />
-            <InfoRow label="Username" value={student.username} />
-            <InfoRow label="Email" value={student.email} />
-            <InfoRow label="Phone" value={student.phone} />
-            <InfoRow label="Major" value={student.major} />
-
-            <button
-              onClick={() => setIsEditing(true)}
-              className="mt-6 w-full bg-[#49BBBD] text-white py-3 rounded-full font-semibold hover:bg-[#3aa4a6] transition"
-            >
-              Edit Profile
-            </button>
-          </div>
-        )}
-
-        {isEditing && (
-          <div className="space-y-4">
-            <InputField
-              label="Full Name"
-              value={editData.name}
-              onChange={e => setEditData({ ...editData, name: e.target.value })}
-            />
-
-            <InputField
-              label="Email"
-              value={editData.email}
-              onChange={e =>
-                setEditData({ ...editData, email: e.target.value })
-              }
-            />
-
-            <InputField
-              label="Phone"
-              value={editData.phone}
-              onChange={e =>
-                setEditData({ ...editData, phone: e.target.value })
-              }
-            />
-
-            <InputField
-              label="Major"
-              value={editData.major}
-              onChange={e =>
-                setEditData({ ...editData, major: e.target.value })
-              }
-            />
-
-            <div className="flex gap-3 pt-4">
-              <button
-                onClick={handleSave}
-                className="flex-1 bg-[#49BBBD] text-white py-3 rounded-full font-semibold hover:bg-[#3aa4a6]"
-              >
-                Save
-              </button>
-              <button
-                onClick={() => setIsEditing(false)}
-                className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-full font-semibold hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
+        <ProfileRow label="Student ID" value={student.sid} />
+        <ProfileRow label="Full Name" value={student.name} />
+        <ProfileRow label="Username" value={student.username} />
+        <ProfileRow label="Phone" value={student.phone} />
+        <ProfileRow label="Major" value={student.major} />
+        <ProfileRow label="Address" value={student.address} />
       </div>
     </div>
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function ProfileRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between border-b pb-2">
+    <div className="flex justify-between border-b pb-2 mb-3">
       <span className="font-semibold">{label}</span>
       <span>{value}</span>
-    </div>
-  );
-}
-
-function InputField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}) {
-  return (
-    <div>
-      <label className="block mb-1 text-gray-700 font-medium">{label}</label>
-      <input
-        type="text"
-        value={value}
-        onChange={onChange}
-        className="w-full px-4 py-2 border rounded-full focus:ring-2 focus:ring-[#49BBBD] text-gray-700"
-      />
     </div>
   );
 }
