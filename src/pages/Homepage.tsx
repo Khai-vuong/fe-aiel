@@ -24,9 +24,9 @@ export default function Homepage() {
         </div>
 
         {/* RIGHT IMAGE PLACEHOLDER */}
-        <div className="w-1/2 flex justify-center">
+        {/* <div className="w-1/2 flex justify-center">
           <div className="w-[340px] h-[280px] bg-white/60 rounded-2xl shadow"></div>
-        </div>
+        </div> */}
       </div>
 
       {/* FLOATING BOXES */}

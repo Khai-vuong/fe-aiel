@@ -7,7 +7,8 @@ import CourseRegister from './pages/CourseRegister';
 import StudentProfile from './pages/StudentProfile';
 import InstructorDashboard from './pages/InstructorDashboard';
 import ChatPage from './pages/ChatPage';
-import TakeQuiz from './pages/TakeQuiz'; // ⬅ thêm vào đây
+import TakeQuiz from './pages/TakeQuiz';
+import QuizList from './pages/QuizList'; // ← trang danh sách quiz
 
 const router = createBrowserRouter([
   {
@@ -19,14 +20,17 @@ const router = createBrowserRouter([
       { path: 'register', element: <Register /> },
       { path: 'courses/register', element: <CourseRegister /> },
       { path: 'student/profile', element: <StudentProfile /> },
+
+      // ⭐ NHẤN QUIZ TRÊN HEADER SẼ ĐI VÀO ĐÂY
+      { path: 'quiz', element: <QuizList /> },
+
+      // ⭐ KHI CHỌN 1 QUIZ → LÀM BÀI
+      { path: 'take-quiz', element: <TakeQuiz /> },
     ],
   },
 
   { path: 'instructor/dashboard', element: <InstructorDashboard /> },
-
   { path: 'chat', element: <ChatPage /> },
-
-  { path: 'take-quiz', element: <TakeQuiz /> },
 ]);
 
 export default function App() {

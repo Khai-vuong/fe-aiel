@@ -1,76 +1,105 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { Link, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 export default function Header() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const location = useLocation();
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    setUsername(localStorage.getItem('username'));
+  }, []);
+
+  const isActive = (path: string) =>
+    location.pathname === path ? 'text-white font-semibold' : 'text-white/80';
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
-    window.location.reload();
+    window.location.href = '/login';
   };
 
   return (
     <header className="bg-[#3eb5b4] text-white py-4">
       <div className="container mx-auto flex justify-between items-center">
-        {/* Logo */}
+        {/* LOGO */}
         <Link to="/" className="text-2xl font-bold">
           TKEDU
         </Link>
 
-        {/* MENU */}
+        {/* MAIN MENU (always visible) */}
         <nav className="flex gap-6">
-          <Link to="/">Home</Link>
-          <span>Courses</span>
-          <span>Careers</span>
-          <span>Blog</span>
-          <span>About Us</span>
+          <Link to="/" className={isActive('/')}>
+            Home
+          </Link>
+
+          {/* Student-only menu */}
+          {username && (
+            <>
+              <Link
+                to="/courses/register"
+                className={isActive('/courses/register')}
+              >
+                Register Courses
+              </Link>
+
+              <Link
+                to="/instructor/dashboard"
+                className={isActive('/instructor/dashboard')}
+              >
+                My Courses
+              </Link>
+
+              <Link to="/chat" className={isActive('/chat')}>
+                Chat
+              </Link>
+
+              <Link to="/quiz" className={isActive('/quiz')}>
+                Quiz
+              </Link>
+            </>
+          )}
+
+          {/* Always visible */}
+          {/* <span className="text-white/80 cursor-pointer">Careers</span>
+          <span className="text-white/80 cursor-pointer">Blog</span>
+          <span className="text-white/80 cursor-pointer">About Us</span> */}
         </nav>
 
-        {/* Nếu chưa đăng nhập */}
-        {!user && (
-          <div className="flex gap-3">
-            <Link
-              to="/login"
-              className="px-4 py-1.5 bg-white text-[#3eb5b4] rounded-full font-medium"
-            >
-              Login
-            </Link>
-            <Link
-              to="/register"
-              className="px-4 py-1.5 bg-white/40 text-white rounded-full font-medium"
-            >
-              Sign Up
-            </Link>
-          </div>
-        )}
+        {/* USER AREA */}
+        <div className="flex gap-3 items-center">
+          {!username ? (
+            <>
+              <Link
+                to="/login"
+                className="px-4 py-1.5 bg-white text-[#3eb5b4] rounded-full font-medium"
+              >
+                Login
+              </Link>
+              <Link
+                to="/register"
+                className="px-4 py-1.5 bg-white/40 text-white rounded-full font-medium hover:bg-white/50"
+              >
+                Sign Up
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link to="/student/profile" className="flex items-center gap-2">
+                <div className="w-9 h-9 bg-white text-[#3eb5b4] rounded-full flex items-center justify-center font-bold">
+                  {username.charAt(0).toUpperCase()}
+                </div>
+                <span className="font-semibold">{username}</span>
+              </Link>
 
-        {/* Nếu đã đăng nhập */}
-        {user && (
-          <div className="flex items-center gap-4">
-            {/* Avatar */}
-            <div className="w-10 h-10 rounded-full bg-white text-[#3eb5b4] flex items-center justify-center font-bold">
-              {user.username.charAt(0).toUpperCase()}
-            </div>
-
-            {/* CLICK VÀO TÊN → PROFILE */}
-            <Link
-              to="/student/profile"
-              className="font-semibold hover:underline"
-            >
-              {user.username}
-            </Link>
-
-            {/* LOGOUT */}
-            <button
-              onClick={handleLogout}
-              className="px-4 py-1.5 bg-white/30 rounded-full hover:bg-white/40"
-            >
-              Logout
-            </button>
-          </div>
-        )}
+              <button
+                onClick={handleLogout}
+                className="px-4 py-1.5 bg-white/40 text-white rounded-full font-medium hover:bg-white/50"
+              >
+                Logout
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );
