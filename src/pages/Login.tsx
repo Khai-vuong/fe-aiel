@@ -1,18 +1,6 @@
 import { useState } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
-// -------- SHA-256 HASH FUNCTION ----------
-async function hashPassword(password: string) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-// -----------------------------------------
-
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState('student');
@@ -26,29 +14,26 @@ export default function Login() {
       return;
     }
 
-    // HASH MẬT KHẨU
-    const hashed = await hashPassword(password);
-    console.log('🔐 SHA-256:', hashed);
-
     try {
-      const response = await fetch(
-        'http://localhost:3000/api/users/auth_login',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: username,
-            hashed_password: hashed,
-          }),
-        }
-      );
+      const response = await fetch('http://localhost:3000/users/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: username,
+          hashed_password: password, // gửi password gốc
+        }),
+      });
 
-      const data = await response.json();
-      console.log('Đăng nhập OK:', data);
+      const token = await response.text(); // BE trả raw string
+
+      console.log('TOKEN:', token);
 
       if (response.ok) {
+        localStorage.setItem('token', token);
+        localStorage.setItem('username', username);
+
         alert('Đăng nhập thành công!');
-        // TODO: điều hướng tuỳ role -> dashboard
+        window.location.href = '/dashboard';
       } else {
         alert('Sai thông tin đăng nhập');
       }
