@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { FaArrowLeft, FaSearch, FaPaperPlane } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom'; // ⭐ THÊM VÀO
 
 // Fake user list
 const users = [
@@ -69,6 +70,8 @@ interface Message {
 }
 
 export default function ChatPage() {
+  const navigate = useNavigate(); // ⭐ THÊM
+
   const [selectedUser] = useState(users[0]); // default chat with TKBOT
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -157,7 +160,11 @@ export default function ChatPage() {
     <div className="min-h-screen flex bg-[#F5F7FA]">
       {/* LEFT SIDEBAR */}
       <div className="w-1/4 bg-white border-r p-6 space-y-4">
-        <button className="p-2 rounded-lg bg-[#49BBBD] text-white w-fit">
+        {/* ⭐ NÚT QUAY VỀ HOME */}
+        <button
+          className="p-2 rounded-lg bg-[#49BBBD] text-white w-fit"
+          onClick={() => navigate('/')}
+        >
           <FaArrowLeft />
         </button>
 

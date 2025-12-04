@@ -7,7 +7,7 @@ export default function Header() {
 
   useEffect(() => {
     setUsername(localStorage.getItem('username'));
-  }, []);
+  }, [location.pathname]); // cập nhật mỗi khi đổi trang
 
   const isActive = (path: string) =>
     location.pathname === path ? 'text-white font-semibold' : 'text-white/80';
@@ -26,13 +26,13 @@ export default function Header() {
           TKEDU
         </Link>
 
-        {/* MAIN MENU (always visible) */}
+        {/* MAIN MENU */}
         <nav className="flex gap-6">
           <Link to="/" className={isActive('/')}>
             Home
           </Link>
 
-          {/* Student-only menu */}
+          {/* Menu dành cho Student khi đã đăng nhập */}
           {username && (
             <>
               <Link
@@ -59,10 +59,14 @@ export default function Header() {
             </>
           )}
 
-          {/* Always visible */}
-          {/* <span className="text-white/80 cursor-pointer">Careers</span>
-          <span className="text-white/80 cursor-pointer">Blog</span>
-          <span className="text-white/80 cursor-pointer">About Us</span> */}
+          {/* Menu hiện khi CHƯA đăng nhập */}
+          {!username && (
+            <>
+              <span className="text-white/80 cursor-pointer">Careers</span>
+              <span className="text-white/80 cursor-pointer">Blog</span>
+              <span className="text-white/80 cursor-pointer">About Us</span>
+            </>
+          )}
         </nav>
 
         {/* USER AREA */}
@@ -75,6 +79,7 @@ export default function Header() {
               >
                 Login
               </Link>
+
               <Link
                 to="/register"
                 className="px-4 py-1.5 bg-white/40 text-white rounded-full font-medium hover:bg-white/50"
