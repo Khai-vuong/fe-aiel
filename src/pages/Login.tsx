@@ -20,20 +20,18 @@ export default function Login() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: username,
-          hashed_password: password, // gửi password gốc
+          hashed_password: password,
         }),
       });
 
-      const token = await response.text(); // BE trả raw string
-
-      console.log('TOKEN:', token);
+      const token = await response.text();
 
       if (response.ok) {
         localStorage.setItem('token', token);
         localStorage.setItem('username', username);
 
         alert('Đăng nhập thành công!');
-        window.location.href = '/dashboard';
+        window.location.href = '/';
       } else {
         alert('Sai thông tin đăng nhập');
       }
@@ -61,7 +59,7 @@ export default function Login() {
             <select
               value={role}
               onChange={e => setRole(e.target.value)}
-              className="w-full mt-1 px-4 py-3 border border-[#30B8B2] rounded-full text-gray-700"
+              className="w-full mt-1 px-4 py-3 border border-[#30B8B2] rounded-full bg-white text-black"
             >
               <option value="student">Student</option>
               <option value="lecture">Lecturer</option>
@@ -77,7 +75,12 @@ export default function Login() {
               placeholder="Enter your User name"
               value={username}
               onChange={e => setUsername(e.target.value)}
-              className="w-full mt-1 px-4 py-3 border border-[#30B8B2] rounded-full text-gray-700"
+              className="
+                w-full mt-1 px-4 py-3 
+                border border-[#30B8B2] 
+                rounded-full 
+                bg-white text-black
+              "
             />
           </div>
 
@@ -90,7 +93,12 @@ export default function Login() {
                 placeholder="Enter your Password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full mt-1 px-4 py-3 border border-[#30B8B2] rounded-full text-gray-700"
+                className="
+                  w-full mt-1 px-4 py-3 
+                  border border-[#30B8B2] 
+                  rounded-full 
+                  bg-white text-black
+                "
               />
               <span
                 className="absolute top-4 right-5 text-gray-600 cursor-pointer"
@@ -101,19 +109,36 @@ export default function Login() {
             </div>
           </div>
 
+          {/* REMEMBER + FORGOT */}
           <div className="flex justify-between items-center mb-6">
             <label className="flex items-center gap-2 text-sm text-gray-600">
               <input type="checkbox" />
               Remember me
             </label>
-            <button className="text-sm text-gray-600 hover:text-gray-800">
+
+            <button
+              className="
+                text-sm px-5 py-2 
+                rounded-full 
+                bg-[#49BBBD] text-white 
+                hover:bg-[#3AA9AD] 
+                transition shadow
+              "
+            >
               Forgot Password?
             </button>
           </div>
 
+          {/* LOGIN BUTTON */}
           <button
             onClick={handleLogin}
-            className="w-full py-3 bg-[#49BBBD] text-white rounded-full font-semibold hover:bg-[#3aa9ad] transition shadow-md"
+            className="
+              w-full py-3 
+              bg-[#49BBBD] text-white 
+              rounded-full font-semibold 
+              hover:bg-[#3AA9AD] 
+              transition shadow-md
+            "
           >
             Login
           </button>
