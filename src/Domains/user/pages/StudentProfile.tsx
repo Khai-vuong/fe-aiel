@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getUserProfile, updateUserProfile } from '../services/usersService';
 
 export default function StudentProfile() {
   const [loading, setLoading] = useState(true);
@@ -15,13 +16,7 @@ export default function StudentProfile() {
     }
 
     try {
-      const res = await fetch('http://localhost:3000/users/profile', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) throw new Error();
-
-      const data = await res.json();
+      const data = await getUserProfile(token);
       console.log('PROFILE DATA:', data);
 
       setStudent({
@@ -115,28 +110,18 @@ function EditProfileModal({
   const token = localStorage.getItem('token');
 
   const handleSubmit = async () => {
-    try {
-      const res = await fetch(
-        `http://localhost:3000/users/update/${student.uid}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            status: 'Active',
-            major,
-            personal_info_json: JSON.stringify({
-              phone,
-              address,
-              name,
-            }),
-          }),
-        }
-      );
+    if (!token) return;
 
-      if (!res.ok) throw new Error('Update failed');
+    try {
+      await updateUserProfile(student.uid, token, {
+        status: 'Active',
+        major,
+        personal_info_json: JSON.stringify({
+          phone,
+          address,
+          name,
+        }),
+      });
 
       alert('Cập nhật thành công!');
       onClose();
