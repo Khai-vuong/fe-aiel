@@ -8,7 +8,8 @@ import StudentProfile from './pages/StudentProfile';
 import InstructorDashboard from './pages/InstructorDashboard';
 import ChatPage from './pages/ChatPage';
 import TakeQuiz from './pages/TakeQuiz';
-import QuizList from './pages/QuizList'; // ← trang danh sách quiz
+import QuizList from './pages/QuizList';
+import NewCourseRegister from './pages/NewCourseRegister';
 
 const router = createBrowserRouter([
   {
@@ -19,16 +20,15 @@ const router = createBrowserRouter([
       { path: 'login', element: <Login /> },
       { path: 'register', element: <Register /> },
       { path: 'courses/register', element: <CourseRegister /> },
+
+      // 2. CHÈN THÊM DÒNG NÀY VÀO ĐÂY
+      { path: 'courses/new', element: <NewCourseRegister /> },
+
       { path: 'student/profile', element: <StudentProfile /> },
-
-      // ⭐ NHẤN QUIZ TRÊN HEADER SẼ ĐI VÀO ĐÂY
       { path: 'quiz', element: <QuizList /> },
-
-      // ⭐ KHI CHỌN 1 QUIZ → LÀM BÀI
       { path: 'take-quiz', element: <TakeQuiz /> },
     ],
   },
-
   { path: 'instructor/dashboard', element: <InstructorDashboard /> },
   { path: 'chat', element: <ChatPage /> },
 ]);

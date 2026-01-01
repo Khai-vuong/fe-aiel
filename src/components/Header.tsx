@@ -7,10 +7,13 @@ export default function Header() {
 
   useEffect(() => {
     setUsername(localStorage.getItem('username'));
-  }, [location.pathname]); // cập nhật mỗi khi đổi trang
+  }, [location.pathname]);
 
+  // Màu chủ đạo: #49BBBD
   const isActive = (path: string) =>
-    location.pathname === path ? 'text-white font-semibold' : 'text-white/80';
+    location.pathname === path
+      ? 'text-[#49BBBD] font-bold border-b-2 border-[#49BBBD]'
+      : 'text-gray-600 font-medium hover:text-[#49BBBD]';
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -19,66 +22,65 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-gradient-to-r from-[#3eb5b4] via-[#2d9a9a] to-[#3eb5b4] text-white py-4 shadow-lg">
-      <div className="container mx-auto flex justify-between items-center px-4">
+    <header className="bg-white sticky top-0 z-50 shadow-sm border-b border-gray-100">
+      <div className="container mx-auto flex justify-between items-center px-6 py-3">
         {/* LOGO */}
-        <Link to="/" className="text-2xl font-bold hover:scale-105 transition-transform duration-200 flex items-center gap-2">
-          <span className="bg-white text-[#3eb5b4] px-3 py-1 rounded-lg shadow-md">TK</span>
-          <span className="tracking-wide">EDU</span>
+        <Link to="/" className="flex items-center gap-2 group">
+          <div className="bg-[#49BBBD] text-white w-10 h-10 flex items-center justify-center rounded-xl shadow-lg shadow-teal-100 group-hover:rotate-12 transition-transform duration-300">
+            <span className="text-xl font-black">TK</span>
+          </div>
+          <span className="text-2xl font-black tracking-tighter text-gray-800">
+            EDU<span className="text-[#49BBBD]">.</span>
+          </span>
         </Link>
 
         {/* MAIN MENU */}
-        <nav className="flex gap-6 items-center">
+        <nav className="hidden md:flex gap-8 items-center">
           <Link
             to="/"
-            className={`${isActive('/')} hover:text-white transition-all duration-200 hover:scale-110 px-3 py-2 rounded-lg hover:bg-white/10`}
+            className={`${isActive('/')} py-1 transition-all duration-200`}
           >
             Home
           </Link>
 
-          {/* Menu dành cho Student khi đã đăng nhập */}
           {username && (
             <>
               <Link
                 to="/courses/register"
-                className={`${isActive('/courses/register')} hover:text-white transition-all duration-200 hover:scale-110 px-3 py-2 rounded-lg hover:bg-white/10`}
+                className={`${isActive('/courses/register')} py-1 transition-all duration-200`}
               >
                 Register Courses
               </Link>
-
               <Link
                 to="/instructor/dashboard"
-                className={`${isActive('/instructor/dashboard')} hover:text-white transition-all duration-200 hover:scale-110 px-3 py-2 rounded-lg hover:bg-white/10`}
+                className={`${isActive('/instructor/dashboard')} py-1 transition-all duration-200`}
               >
                 My Courses
               </Link>
-
               <Link
                 to="/chat"
-                className={`${isActive('/chat')} hover:text-white transition-all duration-200 hover:scale-110 px-3 py-2 rounded-lg hover:bg-white/10`}
+                className={`${isActive('/chat')} py-1 transition-all duration-200`}
               >
                 Chat
               </Link>
-
               <Link
                 to="/quiz"
-                className={`${isActive('/quiz')} hover:text-white transition-all duration-200 hover:scale-110 px-3 py-2 rounded-lg hover:bg-white/10`}
+                className={`${isActive('/quiz')} py-1 transition-all duration-200`}
               >
                 Quiz
               </Link>
             </>
           )}
 
-          {/* Menu hiện khi CHƯA đăng nhập */}
           {!username && (
             <>
-              <span className="text-white/80 cursor-pointer hover:text-white transition-all duration-200 hover:scale-110 px-3 py-2 rounded-lg hover:bg-white/10">
+              <span className="text-gray-600 hover:text-[#49BBBD] cursor-pointer transition-colors">
                 Careers
               </span>
-              <span className="text-white/80 cursor-pointer hover:text-white transition-all duration-200 hover:scale-110 px-3 py-2 rounded-lg hover:bg-white/10">
+              <span className="text-gray-600 hover:text-[#49BBBD] cursor-pointer transition-colors">
                 Blog
               </span>
-              <span className="text-white/80 cursor-pointer hover:text-white transition-all duration-200 hover:scale-110 px-3 py-2 rounded-lg hover:bg-white/10">
+              <span className="text-gray-600 hover:text-[#49BBBD] cursor-pointer transition-colors">
                 About Us
               </span>
             </>
@@ -86,42 +88,62 @@ export default function Header() {
         </nav>
 
         {/* USER AREA */}
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-4 items-center">
           {!username ? (
             <>
               <Link
                 to="/login"
-                className="px-5 py-2 bg-white text-[#3eb5b4] rounded-full font-medium shadow-md hover:shadow-xl hover:scale-105 transition-all duration-200"
+                className="px-6 py-2 text-[#49BBBD] font-bold hover:text-[#3aa4a6] transition-colors"
               >
                 Login
               </Link>
-
               <Link
                 to="/register"
-                className="px-5 py-2 bg-white/20 text-white rounded-full font-medium hover:bg-white/30 border-2 border-white/40 hover:border-white/60 hover:scale-105 transition-all duration-200 shadow-md"
+                className="px-6 py-2 bg-[#49BBBD] text-white rounded-full font-bold shadow-md shadow-teal-100 hover:bg-[#3aa4a6] hover:shadow-lg transition-all"
               >
                 Sign Up
               </Link>
             </>
           ) : (
-            <>
+            <div className="flex items-center gap-4 bg-gray-50 px-2 py-1 rounded-full border border-gray-100">
               <Link
                 to="/student/profile"
-                className="flex items-center gap-2 hover:scale-105 transition-all duration-200 px-3 py-2 rounded-full hover:bg-white/10"
+                className="flex items-center gap-3 pr-2"
               >
-                <div className="w-9 h-9 bg-white text-[#3eb5b4] rounded-full flex items-center justify-center font-bold shadow-md hover:shadow-lg transition-shadow">
+                <div className="w-9 h-9 bg-[#49BBBD] text-white rounded-full flex items-center justify-center font-bold shadow-sm">
                   {username.charAt(0).toUpperCase()}
                 </div>
-                <span className="font-semibold">{username}</span>
+                <div className="hidden lg:block text-left">
+                  <p className="text-xs text-gray-400 leading-none font-medium text-left">
+                    Welcome
+                  </p>
+                  <span className="text-sm font-bold text-gray-700">
+                    {username}
+                  </span>
+                </div>
               </Link>
 
               <button
                 onClick={handleLogout}
-                className="px-5 py-2 bg-white/20 text-white rounded-full font-medium hover:bg-red-500/90 border-2 border-white/40 hover:border-red-400 hover:scale-105 transition-all duration-200 shadow-md hover:shadow-lg"
+                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
+                title="Logout"
               >
-                Logout
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
+                </svg>
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>
