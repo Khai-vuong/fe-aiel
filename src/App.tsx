@@ -14,6 +14,8 @@ import ChatPage from './pages/ChatPage';
 import TakeQuiz from './pages/TakeQuiz';
 import QuizList from './pages/QuizList'; // ← trang danh sách quiz
 
+import ClassesCatalog from './Domains/class/pages/classesCatalog';
+
 const router = createBrowserRouter([
   {
     path: '/',
@@ -24,6 +26,8 @@ const router = createBrowserRouter([
       { path: 'register', element: <Register /> },
       { path: 'courses/register', element: <CourseRegister /> },
       { path: 'student/profile', element: <StudentProfile /> },
+      { path: 'classes/me', element: <ClassesCatalog /> },
+
 
       // ⭐ NHẤN QUIZ TRÊN HEADER SẼ ĐI VÀO ĐÂY
       { path: 'quiz', element: <QuizList /> },

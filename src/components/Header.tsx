@@ -57,7 +57,7 @@ export default function Header() {
                 Học phần
               </Link>
               <Link
-                to="/instructor/dashboard"
+                to="/classes/me"
                 className={`${isActive('/instructor/dashboard')} py-1 transition-all duration-200`}
               >
                 Lớp học của tôi
