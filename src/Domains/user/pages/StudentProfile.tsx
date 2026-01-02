@@ -29,6 +29,7 @@ export default function StudentProfile() {
         address: data.student?.personal_info_json?.address ?? 'N/A',
       });
 
+
       setLoading(false);
     } catch (err) {
       alert('Không thể lấy dữ liệu hồ sơ!');

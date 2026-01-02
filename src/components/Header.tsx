@@ -6,6 +6,8 @@ export default function Header() {
   const location = useLocation();
   const [username, setUsername] = useState<string | null>(null);
 
+  const userRole = localStorage.getItem('userRole');
+
   useEffect(() => {
     setUsername(localStorage.getItem('username'));
   }, [location.pathname]);
@@ -19,6 +21,8 @@ export default function Header() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
+    localStorage.removeItem('userRole');
+    alert("Đăng xuất thành công!");
     window.location.href = '/login';
   };
 
@@ -50,7 +54,7 @@ export default function Header() {
                 to="/courses/register"
                 className={`${isActive('/courses/register')} py-1 transition-all duration-200`}
               >
-                Hoc phần
+                Học phần
               </Link>
               <Link
                 to="/instructor/dashboard"
@@ -58,6 +62,14 @@ export default function Header() {
               >
                 Lớp học của tôi
               </Link>
+              {userRole === "Admin" && (
+                <Link
+                  to="/admin/dashboard"
+                  className={`${isActive('/admin/dashboard')} py-1 transition-all duration-200`}
+                >
+                  Admin Panel
+                </Link>
+              )}
             </>
           )}
 
@@ -83,8 +95,8 @@ export default function Header() {
               <Link
                 to="/login"
                 className={`px-5 py-2 rounded-full font-bold transition-all ${location.pathname === '/login'
-                    ? 'bg-[#49BBBD] text-white shadow-md shadow-teal-100'
-                    : 'text-gray-600 hover:text-[#49BBBD] hover:bg-gray-100'
+                  ? 'bg-[#49BBBD] text-white shadow-md shadow-teal-100'
+                  : 'text-gray-600 hover:text-[#49BBBD] hover:bg-gray-100'
                   }`}
               >
                 Login
@@ -92,8 +104,8 @@ export default function Header() {
               <Link
                 to="/register"
                 className={`px-5 py-2 rounded-full font-bold transition-all ${location.pathname === '/register'
-                    ? 'bg-[#49BBBD] text-white shadow-md shadow-teal-100'
-                    : 'text-gray-600 hover:text-[#49BBBD] hover:bg-gray-100'
+                  ? 'bg-[#49BBBD] text-white shadow-md shadow-teal-100'
+                  : 'text-gray-600 hover:text-[#49BBBD] hover:bg-gray-100'
                   }`}
               >
                 Sign Up

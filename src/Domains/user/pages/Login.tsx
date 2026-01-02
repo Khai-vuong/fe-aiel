@@ -26,11 +26,12 @@ export default function Login() {
         }),
       });
 
-      const token = await response.text();
-
       if (response.ok) {
-        localStorage.setItem('token', token);
+        const data = await response.json();
+
+        localStorage.setItem('token', data.userToken);
         localStorage.setItem('username', username);
+        localStorage.setItem('userRole', data.role);
 
         toast.success('Đăng nhập thành công!');
         setTimeout(() => {
@@ -80,6 +81,7 @@ export default function Login() {
               placeholder="Enter your User name"
               value={username}
               onChange={e => setUsername(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleLogin()}
               className="
                 w-full mt-1 px-4 py-3 
                 border border-[#30B8B2] 

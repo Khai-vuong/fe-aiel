@@ -6,7 +6,9 @@ import Register from './Domains/user/pages/Register';
 import CourseRegister from './pages/CourseRegister';
 // import StudentProfile from './pages/StudentProfile';
 
-import StudentProfile from './Domains/user/pages/StudentProfile';
+// import StudentProfile from './Domains/user/pages/StudentProfile';
+
+import StudentProfile from './Domains/user/pages/UserProfile';
 import InstructorDashboard from './pages/InstructorDashboard';
 import ChatPage from './pages/ChatPage';
 import TakeQuiz from './pages/TakeQuiz';
