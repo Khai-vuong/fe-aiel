@@ -93,6 +93,7 @@ export default function Login() {
                 placeholder="Enter your Password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
                 className="
                   w-full mt-1 px-4 py-3 
                   border border-[#30B8B2] 
@@ -101,7 +102,7 @@ export default function Login() {
                 "
               />
               <span
-                className="absolute top-4 right-5 text-gray-600 cursor-pointer"
+                className="absolute inset-y-0 right-5 flex items-center text-gray-600 cursor-pointer"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <FaEye /> : <FaEyeSlash />}

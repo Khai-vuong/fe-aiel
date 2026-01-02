@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { BotMessageSquare } from 'lucide-react'
 
 export default function Header() {
   const location = useLocation();
@@ -40,7 +41,7 @@ export default function Header() {
             to="/"
             className={`${isActive('/')} py-1 transition-all duration-200`}
           >
-            Home
+            Trang chủ
           </Link>
 
           {username && (
@@ -49,25 +50,13 @@ export default function Header() {
                 to="/courses/register"
                 className={`${isActive('/courses/register')} py-1 transition-all duration-200`}
               >
-                Register Courses
+                Hoc phần
               </Link>
               <Link
                 to="/instructor/dashboard"
                 className={`${isActive('/instructor/dashboard')} py-1 transition-all duration-200`}
               >
-                My Courses
-              </Link>
-              <Link
-                to="/chat"
-                className={`${isActive('/chat')} py-1 transition-all duration-200`}
-              >
-                Chat
-              </Link>
-              <Link
-                to="/quiz"
-                className={`${isActive('/quiz')} py-1 transition-all duration-200`}
-              >
-                Quiz
+                Lớp học của tôi
               </Link>
             </>
           )}
@@ -90,60 +79,77 @@ export default function Header() {
         {/* USER AREA */}
         <div className="flex gap-4 items-center">
           {!username ? (
-            <>
+            <div className="flex items-center gap-2 bg-gray-50 px-2 py-1 rounded-full border border-gray-100">
               <Link
                 to="/login"
-                className="px-6 py-2 text-[#49BBBD] font-bold hover:text-[#3aa4a6] transition-colors"
+                className={`px-5 py-2 rounded-full font-bold transition-all ${location.pathname === '/login'
+                    ? 'bg-[#49BBBD] text-white shadow-md shadow-teal-100'
+                    : 'text-gray-600 hover:text-[#49BBBD] hover:bg-gray-100'
+                  }`}
               >
                 Login
               </Link>
               <Link
                 to="/register"
-                className="px-6 py-2 bg-[#49BBBD] text-white rounded-full font-bold shadow-md shadow-teal-100 hover:bg-[#3aa4a6] hover:shadow-lg transition-all"
+                className={`px-5 py-2 rounded-full font-bold transition-all ${location.pathname === '/register'
+                    ? 'bg-[#49BBBD] text-white shadow-md shadow-teal-100'
+                    : 'text-gray-600 hover:text-[#49BBBD] hover:bg-gray-100'
+                  }`}
               >
                 Sign Up
               </Link>
-            </>
+            </div>
           ) : (
-            <div className="flex items-center gap-4 bg-gray-50 px-2 py-1 rounded-full border border-gray-100">
+            <>
+              {/* Bot Chat Icon */}
               <Link
-                to="/student/profile"
-                className="flex items-center gap-3 pr-2"
+                to="/chat"
+                className="p-2 bg-[#49BBBD] text-white rounded-full shadow-md shadow-teal-100 hover:bg-[#3aa4a6] hover:shadow-lg transition-all"
+                title="Chat with AI"
               >
-                <div className="w-9 h-9 bg-[#49BBBD] text-white rounded-full flex items-center justify-center font-bold shadow-sm">
-                  {username.charAt(0).toUpperCase()}
-                </div>
-                <div className="hidden lg:block text-left">
-                  <p className="text-xs text-gray-400 leading-none font-medium text-left">
-                    Welcome
-                  </p>
-                  <span className="text-sm font-bold text-gray-700">
-                    {username}
-                  </span>
-                </div>
+                <BotMessageSquare className="w-5 h-5 text-white" />
               </Link>
 
-              <button
-                onClick={handleLogout}
-                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
-                title="Logout"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+              <div className="flex items-center gap-4 bg-gray-50 px-2 py-1 rounded-full border border-gray-100">
+                <Link
+                  to="/student/profile"
+                  className="flex items-center gap-3 pr-2"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  />
-                </svg>
-              </button>
-            </div>
+                  <div className="w-9 h-9 bg-[#49BBBD] text-white rounded-full flex items-center justify-center font-bold shadow-sm">
+                    {username.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="hidden lg:block text-left">
+                    <p className="text-xs text-gray-400 leading-none font-medium text-left">
+                      Welcome
+                    </p>
+                    <span className="text-sm font-bold text-gray-700">
+                      {username}
+                    </span>
+                  </div>
+                </Link>
+
+                <button
+                  onClick={handleLogout}
+                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
+                  title="Logout"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>

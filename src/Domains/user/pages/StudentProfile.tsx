@@ -158,13 +158,13 @@ function EditProfileModal({
           value={address}
           onChange={e => setAddress(e.target.value)}
         />
-
+        {/* 
         <label className="font-semibold">Major</label>
         <input
           className="w-full border rounded p-2 mb-4"
           value={major}
           onChange={e => setMajor(e.target.value)}
-        />
+        /> */}
 
         <div className="flex justify-end gap-3">
           <button
