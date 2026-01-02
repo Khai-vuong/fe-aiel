@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -10,7 +12,7 @@ export default function Login() {
 
   const handleLogin = async () => {
     if (!username || !password) {
-      alert('Vui lòng nhập đầy đủ username & password!');
+      toast.error('Vui lòng nhập đầy đủ username & password!');
       return;
     }
 
@@ -30,19 +32,22 @@ export default function Login() {
         localStorage.setItem('token', token);
         localStorage.setItem('username', username);
 
-        alert('Đăng nhập thành công!');
-        window.location.href = '/';
+        toast.success('Đăng nhập thành công!');
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1000);
       } else {
-        alert('Sai thông tin đăng nhập');
+        toast.error('Sai thông tin đăng nhập');
       }
     } catch (err) {
       console.error('Lỗi login:', err);
-      alert('Không thể kết nối server!');
+      toast.error('Không thể kết nối server!');
     }
   };
 
   return (
     <div className="w-full flex justify-center items-center min-h-screen bg-white px-10 py-10">
+      <ToastContainer position="top-right" autoClose={3000} />
       <div className="max-w-6xl w-full grid grid-cols-2 gap-10">
         <div className="flex justify-center items-center">
           <img src="/img/login.png" className="rounded-3xl w-[90%] shadow-md" />

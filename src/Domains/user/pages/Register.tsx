@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { registerUser } from '../services/usersService';
 import type { RegisterRequestData } from '../types';
 
@@ -174,13 +176,15 @@ export default function Register() {
       const response = await registerUser(registerData);
 
       // Registration successful
-      alert(`Registration successful! Welcome ${response.username}`);
+      toast.success(`Registration successful! Welcome ${response.username}`);
 
       // Redirect to login page
-      navigate('/login');
+      setTimeout(() => {
+        navigate('/login');
+      }, 1500);
     } catch (error: any) {
       console.error('Registration error:', error);
-      alert(error.message || 'Registration failed. Please try again.');
+      toast.error(error.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -188,6 +192,7 @@ export default function Register() {
 
   return (
     <div className="w-full flex justify-center items-center min-h-screen bg-white px-10 py-6">
+      <ToastContainer position="top-right" autoClose={3000} />
       <div className="max-w-6xl w-full grid grid-cols-2 gap-10">
         {/* LEFT IMAGE */}
         <div className="flex justify-center items-center">
