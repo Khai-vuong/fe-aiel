@@ -10,9 +10,21 @@ import type {
 const API_BASE_URL = 'http://localhost:3000';
 
 /**
+ * Get token from localStorage
+ */
+const getToken = (): string => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('No authentication token found. Please login.');
+  }
+  return token;
+};
+
+/**
  * Get all classes
  */
-export const getAllClasses = async (token: string): Promise<Class[]> => {
+export const getAllClasses = async (): Promise<Class[]> => {
+  const token = getToken();
   const res = await fetch(`${API_BASE_URL}/classes`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -29,7 +41,8 @@ export const getAllClasses = async (token: string): Promise<Class[]> => {
 /**
  * Get my classes (classes associated with current user)
  */
-export const getMyClasses = async (token: string): Promise<Class[]> => {
+export const getMyClasses = async (): Promise<Class[]> => {
+  const token = getToken();
   const res = await fetch(`${API_BASE_URL}/classes/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -47,9 +60,9 @@ export const getMyClasses = async (token: string): Promise<Class[]> => {
  * Get class by ID
  */
 export const getClassById = async (
-  classId: string,
-  token: string
+  classId: string
 ): Promise<Class> => {
+  const token = getToken();
   const res = await fetch(`${API_BASE_URL}/classes/${classId}`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -68,9 +81,9 @@ export const getClassById = async (
  */
 export const updateClass = async (
   classId: string,
-  token: string,
   data: ClassUpdateDto
 ): Promise<Class> => {
+  const token = getToken();
   const res = await fetch(`${API_BASE_URL}/classes/${classId}`, {
     method: 'PUT',
     headers: {
@@ -91,9 +104,9 @@ export const updateClass = async (
  * Delete class
  */
 export const deleteClass = async (
-  classId: string,
-  token: string
+  classId: string
 ): Promise<void> => {
+  const token = getToken();
   const res = await fetch(`${API_BASE_URL}/classes/${classId}`, {
     method: 'DELETE',
     headers: {
@@ -110,9 +123,9 @@ export const deleteClass = async (
  * Create classes from pending enrollments
  */
 export const createClassesFromEnrollments = async (
-  token: string,
   data?: CreateFromEnrollmentsDto
 ): Promise<ResponseCreateClassDto[]> => {
+  const token = getToken();
   const res = await fetch(`${API_BASE_URL}/classes/createFromEnrollments`, {
     method: 'POST',
     headers: {
@@ -134,9 +147,9 @@ export const createClassesFromEnrollments = async (
  */
 export const addResourceToClass = async (
   classId: string,
-  token: string,
   data: AddResourceDto
 ): Promise<any> => {
+  const token = getToken();
   const res = await fetch(`${API_BASE_URL}/classes/addResource/${classId}`, {
     method: 'POST',
     headers: {

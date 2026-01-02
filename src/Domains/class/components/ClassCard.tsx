@@ -1,4 +1,5 @@
 import type { Class } from '../types';
+import { useNavigate } from 'react-router-dom';
 
 import { Tag, House, Clock } from 'lucide-react'
 
@@ -7,6 +8,7 @@ interface ClassCardProps {
 }
 
 export default function ClassCard({ classItem }: ClassCardProps) {
+    const navigate = useNavigate();
     const colorPalettes = [
         'from-purple-500 to-pink-500',
         'from-blue-500 to-cyan-500',
@@ -96,7 +98,10 @@ export default function ClassCard({ classItem }: ClassCardProps) {
 
             {/* Card Footer */}
             <div className="px-4 pb-4">
-                <button className="w-full bg-[#49BBBD] hover:bg-[#3a9ea0] text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+                <button
+                    onClick={() => navigate(`/class/${classItem.clid}`)}
+                    className="w-full bg-[#49BBBD] hover:bg-[#3a9ea0] text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                >
                     View Details
                 </button>
             </div>

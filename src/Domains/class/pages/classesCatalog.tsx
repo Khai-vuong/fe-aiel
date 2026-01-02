@@ -11,14 +11,7 @@ export default function ClassesCatalog() {
     useEffect(() => {
         const fetchClasses = async () => {
             try {
-                const token = localStorage.getItem('token');
-                if (!token) {
-                    setError('Please login to view your classes');
-                    setLoading(false);
-                    return;
-                }
-
-                const data = await getMyClasses(token);
+                const data = await getMyClasses();
                 console.log('Fetched classes:', data);
                 setClasses(data);
                 setError(null);

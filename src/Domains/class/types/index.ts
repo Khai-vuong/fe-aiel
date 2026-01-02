@@ -4,13 +4,50 @@ export interface Class {
   start_date?: string;
   end_date?: string;
   class_name: string;
+  name?: string;
   status: 'Active' | 'Completed' | 'Cancelled';
-  course? : any;
-  lecturer? : any;
-  schedule_json? : any;
-  location? : string
+  course?: any;
+  lecturer?: any;
+  schedule_json?: any;
+  location?: string;
+  course_id?: string;
+  lecturer_id?: string;
+  students?: Student[];
+  files?: ClassFile[];
+  quizzes?: Quiz[];
   created_at?: string;
   updated_at?: string;
+}
+
+export interface Student {
+  sid: string;
+  name: string;
+  major: string;
+  personal_info_json?: {
+    address?: string;
+    phone?: string;
+    dob?: string;
+    year?: string;
+    [key: string]: any;
+  };
+}
+
+export interface ClassFile {
+  fid: string;
+  filename: string;
+  url: string;
+  file_type: string;
+  is_public: boolean;
+  created_at?: string;
+}
+
+export interface Quiz {
+  qid: string;
+  name: string;
+  description?: string;
+  status: string;
+  available_from?: string;
+  available_until?: string;
 }
 
 export interface ClassCreateDto {

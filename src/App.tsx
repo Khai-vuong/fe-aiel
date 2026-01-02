@@ -15,6 +15,7 @@ import TakeQuiz from './pages/TakeQuiz';
 import QuizList from './pages/QuizList'; // ← trang danh sách quiz
 
 import ClassesCatalog from './Domains/class/pages/classesCatalog';
+import ClassDetail from './Domains/class/pages/classDetail';
 
 const router = createBrowserRouter([
   {
@@ -27,6 +28,7 @@ const router = createBrowserRouter([
       { path: 'courses/register', element: <CourseRegister /> },
       { path: 'student/profile', element: <StudentProfile /> },
       { path: 'classes/me', element: <ClassesCatalog /> },
+      { path: 'class/:clid', element: <ClassDetail /> },
 
 
       // ⭐ NHẤN QUIZ TRÊN HEADER SẼ ĐI VÀO ĐÂY
