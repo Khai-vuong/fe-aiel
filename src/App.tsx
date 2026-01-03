@@ -11,7 +11,7 @@ import CourseRegister from './pages/CourseRegister';
 // import StudentProfile from './Domains/user/pages/StudentProfile';
 
 import UserProfile from './Domains/user/pages/UserProfile';
-import InstructorDashboard from './pages/InstructorDashboard';
+import InstructorDashboard from './Domains/class/pages/InstructorDashboard';
 import ChatPage from './pages/ChatPage';
 import TakeQuiz from './pages/TakeQuiz';
 import QuizList from './pages/QuizList'; // ← trang danh sách quiz

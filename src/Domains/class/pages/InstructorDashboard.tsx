@@ -1,22 +1,16 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  FaGraduationCap,
   FaChalkboardTeacher,
   FaUsers,
-  FaCog,
-  FaSignOutAlt,
-  FaBook,
-  FaSchool,
 } from 'react-icons/fa';
 
 // Import Components
-import InstructorQuizManager from '@/components/InstructorQuizManager';
-import ClassManager from '@/components/ClassManager';
 import StudentsManager from '@/components/StudentsManager';
-import CoursesManager from '@/components/CoursesManager';
 import DashboardOverview from '@/components/DashboardOverview';
 
 export default function InstructorDashboard() {
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('Overview');
 
   const navItems = [
@@ -28,36 +22,12 @@ export default function InstructorDashboard() {
       component: <DashboardOverview />,
     },
 
-    // QUẢN LÝ KHÓA HỌC
-    {
-      id: 'Courses',
-      label: 'Quản lý khóa học',
-      icon: FaGraduationCap,
-      component: <CoursesManager />,
-    },
-
     // DANH SÁCH HỌC VIÊN
     {
       id: 'Students',
       label: 'Danh sách học viên',
       icon: FaUsers,
       component: <StudentsManager />,
-    },
-
-    // QUẢN LÝ LỚP HỌC
-    {
-      id: 'ClassManager',
-      label: 'Quản lý lớp học',
-      icon: FaSchool,
-      component: <ClassManager />,
-    },
-
-    // QUIZ & TÀI LIỆU
-    {
-      id: 'QuizManager',
-      label: 'Quiz & Tài liệu',
-      icon: FaBook,
-      component: <InstructorQuizManager />,
     },
   ];
 
@@ -66,52 +36,62 @@ export default function InstructorDashboard() {
   )?.component;
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] flex">
-      {/* SIDEBAR */}
-      <div className="w-64 bg-gray-800 text-white flex flex-col">
-        {/* Logo */}
-        <div className="p-4 text-2xl font-bold border-b border-gray-700">
-          TKEDU
-        </div>
-
-        {/* Navigation Menu */}
-        <nav className="flex-1 p-4 space-y-2">
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => setActiveSection(item.id)}
-              className={`w-full flex items-center p-3 rounded-lg transition duration-200 ${activeSection === item.id
-                ? 'bg-[#49BBBD] text-white shadow-lg'
-                : 'hover:bg-gray-700 text-gray-300'
-                }`}
-            >
-              <item.icon className="mr-3" size={18} />
-              <span className="font-medium">{item.label}</span>
-            </button>
-          ))}
-        </nav>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-700">
-          <button className="w-full flex items-center p-3 rounded-lg text-gray-400 hover:bg-gray-700">
-            <FaCog className="mr-3" size={18} />
-            Settings
-          </button>
-
-          <button className="w-full flex items-center p-3 rounded-lg text-red-400 hover:bg-gray-700 mt-2">
-            <FaSignOutAlt className="mr-3" size={18} />
-            Logout
-          </button>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-[#F5F7FA]">
       {/* MAIN CONTENT */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="w-full">
         {/* Header */}
         <header className="bg-white shadow-sm p-4 border-b border-gray-200 sticky top-0 z-10">
-          <h1 className="text-2xl font-bold text-gray-800">
-            {navItems.find(item => item.id === activeSection)?.label}
-          </h1>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="text-gray-600 hover:text-[#49BBBD] flex items-center gap-2 font-medium"
+            >
+              ← Back
+            </button>
+            <h1 className="text-2xl font-bold text-gray-800">
+              {navItems.find(item => item.id === activeSection)?.label}
+            </h1>
+          </div>
+
+          {/* Tab Navigation */}
+          <div className="flex justify-between items-center mt-4 gap-4">
+            <div className="flex gap-2 flex-wrap">
+              {navItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  className={`flex items-center px-4 py-2 rounded-lg transition duration-200 ${activeSection === item.id
+                    ? 'bg-[#49BBBD] text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                >
+                  <item.icon className="mr-2" size={16} />
+                  <span className="font-medium text-sm">{item.label}</span>
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => console.log('Export clicked')}
+              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200 shadow-md"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <span className="font-medium text-sm">Export</span>
+            </button>
+          </div>
         </header>
 
         {/* Render Component */}

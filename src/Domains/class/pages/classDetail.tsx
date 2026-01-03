@@ -1,14 +1,12 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getClassById } from '../services/classServices';
 import type { Class } from '../types';
-import { FileText, Users, Clock, MapPin, BookOpen, FileCheck, ChevronDown, ChevronUp, Navigation } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { FileText, Users, Clock, MapPin, BookOpen, FileCheck, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function ClassDetail() {
     const { clid } = useParams<{ clid: string }>();
     const navigate = useNavigate();
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const [classData, setClassData] = useState<Class | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -68,16 +66,6 @@ export default function ClassDetail() {
         return `${day || ''} ${start || ''} - ${end || ''}`.trim();
     };
 
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        console.log(event.target.files?.[0]);
-        const file = event.target.files?.[0];
-        if (file) {
-            toast.success(`File "${file.name}" uploaded successfully!`);
-        }
-        else {
-            toast.error('File upload failed.');
-        }
-    };
 
     return (
         <div className="min-h-screen bg-gray-50 py-8">
