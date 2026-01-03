@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { getUserProfile, updateUserProfile } from '../services/usersService';
+import { toast } from "react-toastify";
 
-export default function StudentProfile() {
+export default function UserProfile() {
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
     const [showForm, setShowForm] = useState(false);
@@ -10,7 +11,7 @@ export default function StudentProfile() {
         const token = localStorage.getItem('token');
 
         if (!token) {
-            alert('Bạn chưa đăng nhập!');
+            toast.error("Bạn chưa đăng nhập!");
             window.location.href = '/login';
             return;
         }
@@ -22,7 +23,7 @@ export default function StudentProfile() {
             setUser(data);
             setLoading(false);
         } catch (err) {
-            alert('Không thể lấy dữ liệu hồ sơ!');
+            toast.error("Không thể lấy dữ liệu hồ sơ!");
             setLoading(false);
         }
     };
@@ -145,11 +146,11 @@ function EditProfileModal({
                 personal_info_json: JSON.stringify(personalInfoData),
             });
 
-            alert('Cập nhật thành công!');
+            toast.success("Cập nhật thành công!");
             onClose();
             onUpdated();
         } catch (err) {
-            alert('Không thể cập nhật thông tin!');
+            toast.error("Không thể cập nhật thông tin!");
         }
     };
 

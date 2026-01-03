@@ -1,4 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Layout from './routers/Layout';
 import Homepage from './pages/Homepage';
 import Login from './Domains/user/pages/Login';
@@ -8,7 +10,7 @@ import CourseRegister from './pages/CourseRegister';
 
 // import StudentProfile from './Domains/user/pages/StudentProfile';
 
-import StudentProfile from './Domains/user/pages/UserProfile';
+import UserProfile from './Domains/user/pages/UserProfile';
 import InstructorDashboard from './pages/InstructorDashboard';
 import ChatPage from './pages/ChatPage';
 import TakeQuiz from './pages/TakeQuiz';
@@ -16,6 +18,8 @@ import QuizList from './pages/QuizList'; // ← trang danh sách quiz
 
 import ClassesCatalog from './Domains/class/pages/classesCatalog';
 import ClassDetail from './Domains/class/pages/classDetail';
+import QuizAdd from './Domains/quiz/pages/QuizAdd';
+import FileAdd from './Domains/quiz/pages/FileAdd';
 
 const router = createBrowserRouter([
   {
@@ -26,9 +30,13 @@ const router = createBrowserRouter([
       { path: 'login', element: <Login /> },
       { path: 'register', element: <Register /> },
       { path: 'courses/register', element: <CourseRegister /> },
-      { path: 'student/profile', element: <StudentProfile /> },
+      { path: 'student/profile', element: <UserProfile /> },
       { path: 'classes/me', element: <ClassesCatalog /> },
       { path: 'class/:clid', element: <ClassDetail /> },
+      { path: 'class/:clid/monitor', element: <InstructorDashboard /> },
+      { path: 'class/:clid/fileAdd', element: <FileAdd /> },
+      { path: 'class/:clid/quizAdd', element: <QuizAdd /> },
+
 
 
       // ⭐ NHẤN QUIZ TRÊN HEADER SẼ ĐI VÀO ĐÂY
@@ -45,5 +53,22 @@ const router = createBrowserRouter([
 ]);
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+      <RouterProvider router={router} />
+
+    </>
+  );
 }

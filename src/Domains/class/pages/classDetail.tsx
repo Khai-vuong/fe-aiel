@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useState, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { getClassById } from '../services/classServices';
 import type { Class } from '../types';
-import { FileText, Users, Clock, MapPin, BookOpen, FileCheck, ChevronDown, ChevronUp } from 'lucide-react';
+import { FileText, Users, Clock, MapPin, BookOpen, FileCheck, ChevronDown, ChevronUp, Navigation } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 export default function ClassDetail() {
     const { clid } = useParams<{ clid: string }>();
+    const navigate = useNavigate();
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [classData, setClassData] = useState<Class | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -65,6 +68,17 @@ export default function ClassDetail() {
         return `${day || ''} ${start || ''} - ${end || ''}`.trim();
     };
 
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        console.log(event.target.files?.[0]);
+        const file = event.target.files?.[0];
+        if (file) {
+            toast.success(`File "${file.name}" uploaded successfully!`);
+        }
+        else {
+            toast.error('File upload failed.');
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="w-[80vw] mx-auto">
@@ -85,7 +99,10 @@ export default function ClassDetail() {
                             </div>
                         </div>
                         {userRole === 'Lecturer' && (
-                            <button className="px-4 py-2 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] transition-colors font-medium">
+                            <button
+                                className="px-4 py-2 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] transition-colors font-medium"
+                                onClick={() => navigate(`/class/${classData.clid}/monitor`)}
+                            >
                                 Class Monitor
                             </button>
                         )}
@@ -226,10 +243,15 @@ export default function ClassDetail() {
                         {activeTab === 'files' && (
                             <div className="space-y-3">
                                 {userRole === 'Lecturer' && (
-                                    <button className="w-full px-4 py-3 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] transition-colors font-medium flex items-center justify-center gap-2">
+
+                                    <button
+                                        onClick={() => navigate(`/class/${classData.clid}/fileAdd`)}
+                                        className="w-full px-4 py-3 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] transition-colors font-medium flex items-center justify-center gap-2"
+                                    >
                                         <FileText className="w-5 h-5" />
                                         Upload File
                                     </button>
+
                                 )}
                                 {classData.files && classData.files.length > 0 ? (
                                     classData.files.map((file) => (
@@ -268,7 +290,10 @@ export default function ClassDetail() {
                         {activeTab === 'quizzes' && (
                             <div className="space-y-3">
                                 {userRole === 'Lecturer' && (
-                                    <button className="w-full px-4 py-3 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] transition-colors font-medium flex items-center justify-center gap-2">
+                                    <button
+                                        className="w-full px-4 py-3 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] transition-colors font-medium flex items-center justify-center gap-2"
+                                        onClick={() => navigate(`/class/${classData.clid}/quizAdd`)}
+                                    >
                                         <FileCheck className="w-5 h-5" />
                                         Add Quiz
                                     </button>

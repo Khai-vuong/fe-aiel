@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { BotMessageSquare } from 'lucide-react'
+import { toast } from 'react-toastify'
 
 export default function Header() {
   const location = useLocation();
@@ -22,7 +23,7 @@ export default function Header() {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
     localStorage.removeItem('userRole');
-    alert("Đăng xuất thành công!");
+    toast.success("Đăng xuất thành công!");
     window.location.href = '/login';
   };
 

@@ -12,6 +12,7 @@ import {
   FaSearch,
   FaTrashAlt,
 } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 
 export default function CourseRegister() {
   const navigate = useNavigate();
@@ -63,10 +64,11 @@ export default function CourseRegister() {
         headers: { Authorization: `Bearer ${savedToken}` },
       });
 
-      alert('Hủy đăng ký thành công!');
+      toast.success('Hủy đăng ký thành công!');
+
       fetchCourses();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Không thể hủy đăng ký lúc này.');
+      toast.error(err.response?.data?.message || 'Không thể hủy đăng ký lúc này.');
     } finally {
       setIsProcessing(false);
     }
@@ -82,7 +84,7 @@ export default function CourseRegister() {
       });
       setSelectedCourse(response.data);
     } catch (err) {
-      alert('Lỗi tải dữ liệu.');
+      toast.error('Lỗi tải dữ liệu.');
       setSelectedCourse(null);
     } finally {
       setIsModalLoading(false);
