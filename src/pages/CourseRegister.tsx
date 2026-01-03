@@ -10,7 +10,8 @@ import {
   FaUsers,
   FaInfoCircle,
   FaSearch,
-  FaTrashAlt,
+  FaChalkboardTeacher,
+  FaCalendarAlt,
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
@@ -18,12 +19,10 @@ export default function CourseRegister() {
   const navigate = useNavigate();
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchText, setSearchText] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'registered'>('all');
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const [isModalLoading, setIsModalLoading] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   const fetchCourses = useCallback(async () => {
     try {
@@ -37,11 +36,9 @@ export default function CourseRegister() {
           headers: { Authorization: `Bearer ${savedToken}` },
         }
       );
-
       setCourses(response.data);
-      setError(null);
     } catch (err: any) {
-      setError('Không thể cập nhật danh sách môn học.');
+      toast.error('Không thể cập nhật danh sách môn học.');
     } finally {
       setLoading(false);
     }
@@ -50,29 +47,6 @@ export default function CourseRegister() {
   useEffect(() => {
     fetchCourses();
   }, [fetchCourses, activeTab]);
-
-  const handleUnregister = async (cid: string, courseName: string) => {
-    const confirmUnreg = window.confirm(
-      `Bạn có chắc chắn muốn HỦY đăng ký môn: ${courseName}?`
-    );
-    if (!confirmUnreg) return;
-
-    try {
-      setIsProcessing(true);
-      const savedToken = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3000/courses/${cid}/register`, {
-        headers: { Authorization: `Bearer ${savedToken}` },
-      });
-
-      toast.success('Hủy đăng ký thành công!');
-
-      fetchCourses();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Không thể hủy đăng ký lúc này.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   const handleViewDetail = async (cid: string) => {
     try {
@@ -84,75 +58,65 @@ export default function CourseRegister() {
       });
       setSelectedCourse(response.data);
     } catch (err) {
-      toast.error('Lỗi tải dữ liệu.');
+      toast.error('Lỗi tải dữ liệu chi tiết.');
       setSelectedCourse(null);
     } finally {
       setIsModalLoading(false);
     }
   };
 
-  const filteredCourses = courses.filter(c => {
-    const matchesSearch =
+  const filteredCourses = courses.filter(
+    c =>
       c.name.toLowerCase().includes(searchText.toLowerCase()) ||
-      c.code.toLowerCase().includes(searchText.toLowerCase());
-
-    if (activeTab === 'registered') {
-      return (
-        matchesSearch &&
-        (c.isRegistered || (c.enrollments && c.enrollments.length > 0))
-      );
-    }
-    return matchesSearch;
-  });
+      c.code.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   return (
-    <div className="w-full min-h-screen bg-[#f8fafc] pb-20">
+    <div className="w-full min-h-screen bg-[#f8fafc] pb-20 font-sans">
+      {/* Header Section */}
       <div className="w-full bg-gradient-to-r from-[#49BBBD] to-[#3aa4a6] pt-16 pb-28 px-10 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
-        <div className="max-w-7xl mx-auto relative z-10 text-center md:text-left">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="max-w-7xl mx-auto relative z-10">
           <h1 className="text-4xl font-extrabold text-white mb-2 tracking-tight uppercase">
-            {activeTab === 'all' ? 'Hệ Thống Học Phần' : 'Học Phần Đã Đăng Ký'}
+            Hệ Thống Học Phần
           </h1>
-          <p className="text-white/80 font-medium"></p>
+          <p className="text-white/80 font-medium">
+            Tra cứu thông tin chi tiết và quản lý lộ trình học tập.
+          </p>
         </div>
       </div>
 
+      {/* Control Bar */}
       <div className="max-w-7xl mx-auto px-6 -mt-14 relative z-20">
         <div className="bg-white rounded-3xl shadow-xl p-5 mb-10 flex flex-col md:flex-row items-center justify-between gap-6 border border-white">
-          <div className="flex bg-gray-100 p-1.5 rounded-2xl">
+          <div className="flex bg-gray-100 p-1 rounded-2xl">
             <button
               onClick={() => setActiveTab('all')}
-              className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'all' ? 'bg-white text-[#49BBBD] shadow-sm' : 'text-gray-500'}`}
+              className={`px-8 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'all' ? 'bg-[#49BBBD] text-white shadow-lg' : 'text-gray-500'}`}
             >
               Tất cả môn
             </button>
-            <button
-              onClick={() => setActiveTab('registered')}
-              className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'registered' ? 'bg-white text-[#49BBBD] shadow-sm' : 'text-gray-500'}`}
-            >
-              Đã đăng ký
-            </button>
           </div>
-
           <div className="flex items-center gap-4 w-full md:w-auto">
             <div className="relative w-full md:w-80">
               <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Tìm tên môn..."
+                placeholder="Tìm mã hoặc tên môn..."
                 className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-[#49BBBD]/50"
                 onChange={e => setSearchText(e.target.value)}
               />
             </div>
             <button
               onClick={() => navigate('/courses/new')}
-              className="bg-gray-900 text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 hover:bg-black transition-all"
+              className="bg-[#49BBBD] text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 hover:bg-[#3aa4a6] transition-all shadow-md active:scale-95"
             >
               <FaPlus /> <span>Đăng ký mới</span>
             </button>
           </div>
         </div>
 
+        {/* Course Grid */}
         {loading ? (
           <div className="flex flex-col items-center py-20 text-[#49BBBD]">
             <FaSpinner className="animate-spin mb-4" size={50} />
@@ -169,32 +133,21 @@ export default function CourseRegister() {
                     <div className="p-4 bg-teal-50 rounded-2xl text-[#49BBBD] group-hover:bg-[#49BBBD] group-hover:text-white transition-colors">
                       <FaBook size={24} />
                     </div>
-                    <span className="text-[11px] font-black text-[#49BBBD] bg-[#49BBBD]/10 px-3 py-1.5 rounded-full">
+                    <span className="text-[11px] font-black text-[#49BBBD] bg-[#49BBBD]/10 px-3 py-1.5 rounded-full uppercase">
                       {course.code}
                     </span>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-3 h-14 line-clamp-2 uppercase">
+                  <h3 className="text-xl font-bold text-gray-800 mb-3 line-clamp-2 uppercase h-14">
                     {course.name}
                   </h3>
-                  <div className="flex justify-between items-center mt-6">
-                    <div className="flex items-center gap-2 text-gray-500 text-sm font-bold">
-                      <FaGraduationCap /> {course.credits} Tín chỉ
-                    </div>
-                    {activeTab === 'registered' && (
-                      <button
-                        onClick={() =>
-                          handleUnregister(course.cid, course.name)
-                        }
-                        className="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors"
-                      >
-                        <FaTrashAlt size={18} />
-                      </button>
-                    )}
+                  <div className="flex items-center gap-2 text-gray-500 text-sm font-bold">
+                    <FaGraduationCap className="text-[#49BBBD]" />{' '}
+                    {course.credits || 3} Tín chỉ
                   </div>
                 </div>
                 <button
                   onClick={() => handleViewDetail(course.cid)}
-                  className="w-full mt-8 py-4 bg-gray-50 text-gray-700 rounded-2xl font-bold group-hover:bg-[#49BBBD] group-hover:text-white transition-all"
+                  className="w-full mt-8 py-4 bg-gray-50 text-gray-700 rounded-2xl font-bold group-hover:bg-[#49BBBD] group-hover:text-white transition-all uppercase tracking-widest text-xs"
                 >
                   XEM CHI TIẾT
                 </button>
@@ -204,87 +157,200 @@ export default function CourseRegister() {
         )}
       </div>
 
+      {/* MODAL CHI TIẾT ĐẦY ĐỦ THÔNG TIN */}
       {selectedCourse && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-[6px] animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden relative animate-in zoom-in-95">
-            <button
-              onClick={() => setSelectedCourse(null)}
-              className="absolute top-6 right-6 p-2 bg-gray-100 hover:bg-red-50 hover:text-red-500 rounded-full transition-all"
-            >
-              <FaTimes size={18} />
-            </button>
-
-            {isModalLoading ? (
-              <div className="p-24 flex flex-col items-center">
-                <FaSpinner className="animate-spin text-[#49BBBD]" size={40} />
-                <p className="mt-4 text-gray-400 font-medium">
-                  Đang tải thông tin...
-                </p>
-              </div>
-            ) : (
-              <div className="p-10">
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="bg-[#49BBBD]/10 text-[#49BBBD] px-4 py-1.5 rounded-full text-xs font-black uppercase">
-                    {selectedCourse.code}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-[8px] animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-3xl max-h-[90vh] rounded-[2.5rem] shadow-2xl overflow-hidden relative animate-in zoom-in-95 flex flex-col">
+            {/* Modal Header */}
+            <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-[#49BBBD] text-white rounded-2xl shadow-lg shadow-[#49BBBD]/20">
+                  <FaInfoCircle size={24} />
+                </div>
+                <div>
+                  <span className="text-[10px] font-black text-[#49BBBD] uppercase tracking-widest">
+                    Thông tin chi tiết học phần
                   </span>
-                  <span className="text-gray-400 text-xs font-mono">
-                    ID: {selectedCourse.cid}
-                  </span>
+                  <h2 className="text-2xl font-black text-gray-900 leading-tight uppercase">
+                    {selectedCourse.name}
+                  </h2>
                 </div>
-
-                <h2 className="text-3xl font-black text-gray-900 mb-6 leading-tight uppercase">
-                  {selectedCourse.name}
-                </h2>
-
-                <div className="grid grid-cols-2 gap-5 mb-8">
-                  <div className="p-5 bg-gray-50 rounded-3xl flex items-center gap-4 border border-gray-100">
-                    <div className="p-3 bg-white rounded-2xl text-[#49BBBD] shadow-sm">
-                      <FaGraduationCap size={22} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                        Tín chỉ
-                      </p>
-                      <p className="font-extrabold text-gray-800">
-                        {selectedCourse.credits} Học phần
-                      </p>
-                    </div>
-                  </div>
-                  <div className="p-5 bg-gray-50 rounded-3xl flex items-center gap-4 text-left border border-gray-100">
-                    <div className="p-3 bg-white rounded-2xl text-blue-500 shadow-sm">
-                      <FaUsers size={22} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                        Lớp học
-                      </p>
-                      <p className="font-extrabold text-gray-800">
-                        {selectedCourse.classes?.length || 0} Nhóm lớp
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-10 text-left">
-                  <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <FaInfoCircle className="text-[#49BBBD]" /> Mô tả chi tiết
-                  </h4>
-                  <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
-                    <p className="text-gray-600 leading-relaxed text-sm italic">
-                      {selectedCourse.description ||
-                        'Chưa có thông tin mô tả chi tiết cho học phần này.'}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setSelectedCourse(null)}
-                  className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black hover:bg-black transition-all shadow-lg shadow-gray-200"
-                >
-                  ĐÓNG
-                </button>
               </div>
-            )}
+              <button
+                onClick={() => setSelectedCourse(null)}
+                className="p-3 bg-white hover:bg-red-50 hover:text-red-500 rounded-2xl transition-all shadow-sm border border-gray-100"
+              >
+                <FaTimes size={20} />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-8 custom-scrollbar">
+              {isModalLoading ? (
+                <div className="p-20 flex flex-col items-center">
+                  <FaSpinner
+                    className="animate-spin text-[#49BBBD]"
+                    size={40}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-8 text-left">
+                  {/* Grid Bento Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-5 bg-blue-50 rounded-3xl border border-blue-100 flex items-center gap-4">
+                      <div className="p-3 bg-white rounded-xl text-blue-500 shadow-sm">
+                        <FaBook size={20} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">
+                          Mã học phần
+                        </p>
+                        <p className="font-extrabold text-gray-800">
+                          {selectedCourse.code}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="p-5 bg-teal-50 rounded-3xl border border-teal-100 flex items-center gap-4">
+                      <div className="p-3 bg-white rounded-xl text-[#49BBBD] shadow-sm">
+                        <FaGraduationCap size={20} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-teal-400 font-bold uppercase tracking-wider">
+                          Số tín chỉ
+                        </p>
+                        <p className="font-extrabold text-gray-800">
+                          {selectedCourse.credits || 3} Tín chỉ
+                        </p>
+                      </div>
+                    </div>
+                    <div className="p-5 bg-purple-50 rounded-3xl border border-purple-100 flex items-center gap-4">
+                      <div className="p-3 bg-white rounded-xl text-purple-500 shadow-sm">
+                        <FaUsers size={20} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-purple-400 font-bold uppercase tracking-wider">
+                          Tổng số lớp
+                        </p>
+                        <p className="font-extrabold text-gray-800">
+                          {selectedCourse.classes?.length || 0} Nhóm lớp
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Description Section */}
+                  <div>
+                    <h4 className="text-sm font-black text-gray-900 mb-3 flex items-center gap-2 uppercase tracking-widest border-l-4 border-[#49BBBD] pl-3">
+                      Mô tả nội dung
+                    </h4>
+                    <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
+                      <p className="text-gray-600 leading-relaxed italic">
+                        {selectedCourse.description ||
+                          'Chưa có thông tin mô tả chi tiết cho học phần này. Nội dung đang được cập nhật bởi giáo vụ khoa.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Lecturers Section */}
+                  <div>
+                    <h4 className="text-sm font-black text-gray-900 mb-3 flex items-center gap-2 uppercase tracking-widest border-l-4 border-orange-400 pl-3">
+                      Đội ngũ giảng viên
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {selectedCourse.lecturers?.length > 0 ? (
+                        selectedCourse.lecturers.map((lec: any) => (
+                          <div
+                            key={lec.id}
+                            className="flex items-center gap-3 p-4 bg-white border border-gray-100 rounded-2xl shadow-sm"
+                          >
+                            <div className="w-10 h-10 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center font-bold">
+                              {lec.name?.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="font-bold text-gray-800 text-sm">
+                                {lec.name}
+                              </p>
+                              <p className="text-[10px] text-gray-400 uppercase font-bold">
+                                {lec.specialization || 'Giảng viên'}
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-400 text-sm italic">
+                          Đang phân công giảng viên...
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Available Classes Section */}
+                  <div>
+                    <h4 className="text-sm font-black text-gray-900 mb-3 flex items-center gap-2 uppercase tracking-widest border-l-4 border-indigo-400 pl-3">
+                      Danh sách nhóm lớp đang mở
+                    </h4>
+                    <div className="space-y-3">
+                      {selectedCourse.classes?.length > 0 ? (
+                        selectedCourse.classes.map((cls: any) => (
+                          <div
+                            key={cls.id}
+                            className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white border border-gray-100 rounded-3xl shadow-sm hover:border-indigo-200 transition-all"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="p-3 bg-indigo-50 text-indigo-500 rounded-xl">
+                                <FaChalkboardTeacher />
+                              </div>
+                              <div>
+                                <p className="font-black text-gray-800">
+                                  Nhóm:{' '}
+                                  {cls.group_number || cls.id.substring(0, 4)}
+                                </p>
+                                <p className="text-xs text-gray-400 flex items-center gap-1">
+                                  <FaCalendarAlt /> Học kỳ:{' '}
+                                  {cls.semester || 'Học kỳ 1'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="mt-3 sm:mt-0 flex items-center gap-4">
+                              <div className="text-right">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                                  Sĩ số lớp
+                                </p>
+                                <p className="text-sm font-black text-gray-700">
+                                  {cls.current_students || 0}/
+                                  {cls.max_students || 40}
+                                </p>
+                              </div>
+                              <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-indigo-500"
+                                  style={{
+                                    width: `${((cls.current_students || 0) / (cls.max_students || 40)) * 100}%`,
+                                  }}
+                                ></div>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-8 text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200 text-gray-400 text-sm font-medium">
+                          Chưa có nhóm lớp nào được mở cho học kỳ hiện tại.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-8 border-t border-gray-100 bg-gray-50/50 flex justify-end">
+              <button
+                onClick={() => setSelectedCourse(null)}
+                className="px-10 py-4 bg-gray-900 text-white rounded-2xl font-black hover:bg-black transition-all shadow-lg shadow-gray-200 active:scale-95 uppercase tracking-widest text-xs"
+              >
+                Đóng thông tin
+              </button>
+            </div>
           </div>
         </div>
       )}

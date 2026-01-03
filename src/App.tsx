@@ -6,16 +6,12 @@ import Homepage from './pages/Homepage';
 import Login from './Domains/user/pages/Login';
 import Register from './Domains/user/pages/Register';
 import CourseRegister from './pages/CourseRegister';
-// import StudentProfile from './pages/StudentProfile';
-
-// import StudentProfile from './Domains/user/pages/StudentProfile';
-
+import NewCourseRegister from './pages/NewCourseRegister';
 import UserProfile from './Domains/user/pages/UserProfile';
 import InstructorDashboard from './Domains/class/pages/InstructorDashboard';
 import ChatPage from './pages/ChatPage';
 import TakeQuiz from './pages/TakeQuiz';
-import QuizList from './pages/QuizList'; // ← trang danh sách quiz
-
+import QuizList from './pages/QuizList';
 import ClassesCatalog from './Domains/class/pages/classesCatalog';
 import ClassDetail from './Domains/class/pages/classDetail';
 import QuizAdd from './Domains/quiz/pages/QuizAdd';
@@ -30,6 +26,8 @@ const router = createBrowserRouter([
       { path: 'login', element: <Login /> },
       { path: 'register', element: <Register /> },
       { path: 'courses/register', element: <CourseRegister /> },
+      { path: 'courses/new', element: <NewCourseRegister /> },
+
       { path: 'student/profile', element: <UserProfile /> },
       { path: 'classes/me', element: <ClassesCatalog /> },
       { path: 'class/:clid', element: <ClassDetail /> },
@@ -37,19 +35,15 @@ const router = createBrowserRouter([
       { path: 'class/:clid/fileAdd', element: <FileAdd /> },
       { path: 'class/:clid/quizAdd', element: <QuizAdd /> },
 
-
-
-      // ⭐ NHẤN QUIZ TRÊN HEADER SẼ ĐI VÀO ĐÂY
       { path: 'quiz', element: <QuizList /> },
 
-      // ⭐ KHI CHỌN 1 QUIZ → LÀM BÀI
-      { path: 'take-quiz', element: <TakeQuiz /> },
+      /* ⭐ SỬA TẠI ĐÂY: Thêm :qid để nhận ID bài Quiz từ URL */
+      { path: 'take-quiz/:qid', element: <TakeQuiz /> },
+
       { path: 'instructor/dashboard', element: <InstructorDashboard /> },
       { path: 'chat', element: <ChatPage /> },
     ],
   },
-
-
 ]);
 
 export default function App() {
@@ -68,7 +62,6 @@ export default function App() {
         theme="light"
       />
       <RouterProvider router={router} />
-
     </>
   );
 }
