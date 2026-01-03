@@ -6,7 +6,6 @@ export default function TakeQuiz() {
   const navigate = useNavigate();
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
 
-  // 1. Sửa đường dẫn ảnh đúng theo cấu trúc public/img/
   const question = {
     id: 1,
     title: 'Questions 1:',
