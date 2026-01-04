@@ -17,6 +17,7 @@ import ClassDetail from './Domains/class/pages/classDetail';
 import EditClass from './Domains/class/pages/EditClass';
 import QuizAdd from './Domains/quiz/pages/QuizAdd';
 import FileAdd from './Domains/quiz/pages/FileAdd';
+import AdminCourses from './Domains/course/pages/AdminCourses';
 
 const router = createBrowserRouter([
   {
@@ -28,6 +29,8 @@ const router = createBrowserRouter([
       { path: 'register', element: <Register /> },
       { path: 'courses/register', element: <CourseRegister /> },
       { path: 'courses/new', element: <NewCourseRegister /> },
+
+      { path: 'courses/catalog', element: <AdminCourses /> },
 
       { path: 'student/profile', element: <UserProfile /> },
       { path: 'classes/me', element: <ClassesCatalog /> },
