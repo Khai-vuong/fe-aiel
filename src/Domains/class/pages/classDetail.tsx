@@ -87,12 +87,20 @@ export default function ClassDetail() {
                             </div>
                         </div>
                         {userRole === 'Lecturer' && (
-                            <button
-                                className="px-4 py-2 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] transition-colors font-medium"
-                                onClick={() => navigate(`/class/${classData.clid}/monitor`)}
-                            >
-                                Class Monitor
-                            </button>
+                            <div className="flex gap-3">
+                                <button
+                                    className="px-4 py-2 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] transition-colors font-medium"
+                                    onClick={() => navigate(`/class/${classData.clid}/monitor`)}
+                                >
+                                    Class Monitor
+                                </button>
+                                <button
+                                    className="px-4 py-2 bg-[#30B8B2] text-white rounded-lg hover:bg-[#2a9ea0] transition-colors font-medium"
+                                    onClick={() => navigate(`/class/${classData.clid}/edit`, { state: { classData } })}
+                                >
+                                    Edit Class
+                                </button>
+                            </div>
                         )}
                     </div>
 

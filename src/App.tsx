@@ -18,6 +18,7 @@ import QuizList from './pages/QuizList'; // ← trang danh sách quiz
 
 import ClassesCatalog from './Domains/class/pages/classesCatalog';
 import ClassDetail from './Domains/class/pages/classDetail';
+import EditClass from './Domains/class/pages/EditClass';
 import QuizAdd from './Domains/quiz/pages/QuizAdd';
 import FileAdd from './Domains/quiz/pages/FileAdd';
 
@@ -33,6 +34,7 @@ const router = createBrowserRouter([
       { path: 'student/profile', element: <UserProfile /> },
       { path: 'classes/me', element: <ClassesCatalog /> },
       { path: 'class/:clid', element: <ClassDetail /> },
+      { path: 'class/:clid/edit', element: <EditClass /> },
       { path: 'class/:clid/monitor', element: <InstructorDashboard /> },
       { path: 'class/:clid/fileAdd', element: <FileAdd /> },
       { path: 'class/:clid/quizAdd', element: <QuizAdd /> },
