@@ -6,9 +6,9 @@ export interface Class {
   class_name: string;
   name?: string;
   status: 'Active' | 'Completed' | 'Cancelled';
+  schedule_json?: string | any;
   course?: any;
   lecturer?: any;
-  schedule_json?: any;
   location?: string;
   course_id?: string;
   lecturer_id?: string;
@@ -70,10 +70,11 @@ export interface ResponseCreateClassDto {
 }
 
 export interface ClassUpdateDto {
-  start_date?: string;
-  end_date?: string;
-  class_name?: string;
+  name?: string;
+  schedule_json?: string;
+  location?: string;
   status?: 'Active' | 'Completed' | 'Cancelled';
+  lecturer_id?: string;
 }
 
 export interface AddResourceDto {
