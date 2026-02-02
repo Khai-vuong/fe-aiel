@@ -134,7 +134,7 @@ export default function AdminCourses() {
                 </td>
               </tr>
             )}
-            {courses.map((c) => (
+            {courses.map(c => (
               <tr key={c.cid} className="border-b">
                 <td className="px-4 py-2">{c.name}</td>
                 <td className="px-4 py-2">{c.code}</td>

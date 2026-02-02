@@ -1,188 +1,352 @@
-import { FaArrowLeft, FaClock, FaCheckCircle } from 'react-icons/fa';
-import { useState } from 'react';
+import {
+  FaArrowLeft,
+  FaClock,
+  FaChevronLeft,
+  FaChevronRight,
+  FaCheck,
+} from 'react-icons/fa';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+// 1. Định nghĩa kiểu dữ liệu cho câu hỏi
+interface Question {
+  id: number;
+  title: string;
+  description: string;
+  image?: string;
+  options: string[];
+}
 
 export default function TakeQuiz() {
   const navigate = useNavigate();
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
 
-  const question = {
-    id: 1,
-    title: 'Questions 1:',
-    description:
-      'TOTC’s school management software helps traditional and online schools manage scheduling, attendance, payments and virtual classrooms all in one secure cloud-based system.',
-    image: '/img/quiz-preview.jpg',
-    answers: [
-      'Lorem ipsum dolor sit amet',
-      'Consectetur adipiscing elit, sed do',
-      'Elusmod tempos Lorem ipsum',
-      'Lorem ipsum dolor sit amet',
-    ],
-  };
-
-  const contents = [
-    { title: 'Get Started', duration: '1 Hour', active: false },
+  const questions: Question[] = [
     {
-      title: 'Illustrator Structures',
-      duration: '2 Hour',
-      active: true,
-      items: [
-        'Lorem ipsum dolor sit amet',
-        'Lorem ipsum dolor',
-        'Lorem ipsum dolor sit amet',
+      id: 1,
+      title: 'Question 1',
+      description: 'What is the correct way to declare a variable in Python?',
+      image: '/img/quiz-preview.jpg',
+      options: ['var x = 10', 'x = 10', 'int x = 10', 'declare x = 10'],
+    },
+    {
+      id: 2,
+      title: 'Question 2',
+      description:
+        'Which hook is used to manage state in a functional React component?',
+      options: ['useEffect', 'useState', 'useContext', 'useReducer'],
+    },
+    {
+      id: 3,
+      title: 'Question 3',
+      description:
+        'What allows you to pass data through the component tree without having to pass props down manually at every level?',
+      options: ['Props', 'State', 'Context API', 'Redux'],
+    },
+    {
+      id: 4,
+      title: 'Question 4',
+      description: 'What is the command to create a new React app?',
+      options: [
+        'npx create-react-app my-app',
+        'npm install react',
+        'node start react',
+        'git clone react',
       ],
     },
-    { title: 'Using Illustrator', duration: '1 Hour', active: false },
-    { title: 'What is Pandas?', duration: '12:54', active: false },
-    { title: 'Work with Numpy', duration: '59:00', active: false },
+    {
+      id: 5,
+      title: 'Question 5',
+      description:
+        'Which method is used to update the state in a class component?',
+      options: [
+        'this.updateState()',
+        'this.setState()',
+        'setState()',
+        'this.state()',
+      ],
+    },
   ];
 
+  // --- STATE MANAGEMENT ---
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<number, string>>({}); // Lưu câu trả lời
+  const [timeLeft, setTimeLeft] = useState(600); // ⏲️ Thời gian làm bài: 600 giây (10 phút)
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Ref để quản lý setInterval
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // --- LOGIC ĐỒNG HỒ ĐẾM NGƯỢC ---
+  useEffect(() => {
+    // Nếu đã nộp bài thì dừng đồng hồ
+    if (isSubmitted) return;
+
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prevTime => {
+        if (prevTime <= 1) {
+          clearInterval(timerRef.current!);
+          handleSubmit(); // ⚡ Hết giờ -> Tự động nộp bài
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+
+    // Cleanup khi component unmount
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isSubmitted]);
+
+  // Hàm format giây thành mm:ss (Ví dụ: 65s -> 01:05)
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  // --- XỬ LÝ SỰ KIỆN ---
+  const handleOptionSelect = (option: string) => {
+    if (isSubmitted) return; // Không cho chọn nếu đã nộp
+    const currentQ = questions[currentQuestionIndex];
+    setAnswers(prev => ({
+      ...prev,
+      [currentQ.id]: option,
+    }));
+  };
+
+  const handleSubmit = () => {
+    setIsSubmitted(true);
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    // TODO: Gọi API nộp bài ở đây
+    console.log('Bài thi đã nộp! Đáp án:', answers);
+    alert('Đã nộp bài thành công!');
+  };
+
+  // Tính toán tiến độ
+  const currentQ = questions[currentQuestionIndex];
+  const answeredCount = Object.keys(answers).length;
+  const progressPercentage = (answeredCount / questions.length) * 100;
+
   return (
-    <div className="min-h-screen bg-[#EAF6FF] p-6 flex gap-6">
-      <div className="w-3/4">
-        {/* Header */}
-        <div className="bg-white p-5 rounded-xl shadow flex items-center justify-between">
+    <div className="min-h-screen bg-[#EAF6FF] font-sans pb-10">
+      {/* --- STICKY HEADER (Luôn hiển thị khi cuộn) --- */}
+      <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-100 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate(-1)}
-              className="bg-[#49BBBD] p-3 rounded-lg text-white hover:bg-[#3aa4a6] transition-colors"
+              className="bg-gray-100 p-2.5 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors"
             >
               <FaArrowLeft size={16} />
             </button>
             <div>
-              <h2 className="text-xl font-bold text-gray-800">
-                UX/UI Design Conference Meeting
+              <h2 className="text-lg font-bold text-gray-800">
+                Final Exam: Frontend React
               </h2>
-              <div className="flex gap-6 text-gray-500 text-sm mt-1">
-                <span>9 Questions</span>
-                <span className="flex items-center gap-2">
-                  <FaClock size={14} /> 5h 30min
-                </span>
-              </div>
-            </div>
-          </div>
-          <button className="text-gray-400 hover:text-gray-600">⚙</button>
-        </div>
-
-        {/* QUESTION AREA */}
-        <div className="mt-10 p-6">
-          <h3 className="text-3xl font-bold text-[#49BBBD] mb-4">
-            {question.title}
-          </h3>
-          <div className="flex gap-10 items-start">
-            <div className="w-1/2">
-              <p className="text-gray-600 leading-relaxed mb-6">
-                {question.description}
-              </p>
-              <div className="space-y-4">
-                {question.answers.map((ans, idx) => {
-                  const letter = String.fromCharCode(65 + idx);
-                  const isSelected = selectedAnswer === letter;
-                  return (
-                    <div
-                      key={idx}
-                      className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer border-2 transition-all ${
-                        isSelected
-                          ? 'bg-[#D3F5D9] border-[#49BBBD]'
-                          : 'bg-white border-gray-100 hover:border-gray-300'
-                      }`}
-                      onClick={() => setSelectedAnswer(letter)}
-                    >
-                      <FaCheckCircle
-                        className={`${isSelected ? 'text-[#49BBBD]' : 'text-gray-300'}`}
-                      />
-                      <span className="text-gray-700">{ans}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 2. Phần hiện ảnh đã sửa khung viền và đường dẫn */}
-            <div className="w-1/2 flex justify-center">
-              <div className="bg-white p-3 rounded-[2rem] shadow-xl border border-gray-100">
-                <img
-                  src={question.image}
-                  alt="quiz preview"
-                  className="rounded-[1.5rem] w-full h-[350px] object-cover"
-                  onError={e => {
-                    console.error(
-                      'Lỗi: Không tìm thấy ảnh tại',
-                      question.image
-                    );
-                    (e.target as HTMLImageElement).src =
-                      'https://via.placeholder.com/500x350?text=Check+Public+Img+Folder';
-                  }}
-                />
+              <div className="text-gray-500 text-xs mt-0.5">
+                Attempt 1 • {questions.length} Questions
               </div>
             </div>
           </div>
 
-          <div className="mt-10 flex items-center justify-center gap-10">
-            {['A', 'B', 'C', 'D', 'E'].map((l, i) => (
-              <button
-                key={i}
-                onClick={() => setSelectedAnswer(l)}
-                className={`px-4 py-2 rounded-lg text-lg font-semibold transition ${
-                  selectedAnswer === l
-                    ? 'bg-[#49BBBD] text-white scale-110 shadow-md'
-                    : 'text-[#49BBBD] hover:bg-[#D7F3F4]'
-                }`}
-              >
-                {l}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-10 text-right">
-            <button className="bg-[#49BBBD] text-white font-semibold px-8 py-3 rounded-lg shadow hover:bg-[#3EA8AA] transition active:scale-95">
-              Submit
-            </button>
+          {/* ⏲️ ĐỒNG HỒ ĐẾM NGƯỢC */}
+          <div
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-mono font-bold text-xl shadow-sm border-2 transition-colors ${
+              timeLeft < 60
+                ? 'bg-red-50 text-red-600 border-red-100 animate-pulse' // Sắp hết giờ: Màu đỏ + Nhấp nháy
+                : 'bg-[#EFFFFF] text-[#49BBBD] border-[#49BBBD]/20'
+            }`}
+          >
+            <FaClock className={timeLeft < 60 ? 'animate-spin' : ''} />
+            {formatTime(timeLeft)}
           </div>
         </div>
       </div>
 
-      {/* RIGHT SIDEBAR */}
-      <div className="w-1/4 bg-white p-5 rounded-xl shadow self-start sticky top-6">
-        <h3 className="text-lg font-bold text-gray-700 mb-4">
-          Course Contents
-        </h3>
-        <div className="mb-5">
-          <div className="text-xs text-gray-600 mb-1 uppercase font-bold">
-            2/5 Completed
-          </div>
-          <div className="w-full h-2 bg-gray-200 rounded-full">
-            <div className="h-2 bg-[#49BBBD] w-2/5 rounded-full transition-all duration-500"></div>
-          </div>
-        </div>
-        <div className="space-y-4">
-          {contents.map((item, idx) => (
-            <div
-              key={idx}
-              className={`p-4 rounded-lg border-2 transition ${
-                item.active
-                  ? 'border-[#49BBBD] bg-[#EFFFFF]'
-                  : 'border-gray-50 bg-white hover:bg-gray-100'
-              }`}
-            >
-              <h4 className="font-semibold text-gray-800">{item.title}</h4>
-              <div className="text-gray-500 text-xs flex items-center gap-2 mt-1">
-                <FaClock size={12} /> {item.duration}
+      <div className="max-w-7xl mx-auto p-6 flex gap-8">
+        {/* --- LEFT COLUMN: QUESTION CONTENT --- */}
+        <div className="flex-1 flex flex-col gap-6">
+          <div className="bg-white p-8 rounded-2xl shadow-sm min-h-[500px] flex flex-col relative">
+            {/* Question Title */}
+            <div className="mb-6 border-b border-gray-100 pb-4">
+              <span className="text-[#49BBBD] font-bold text-xs uppercase tracking-widest bg-teal-50 px-2 py-1 rounded">
+                Question {currentQuestionIndex + 1}
+              </span>
+              <h3 className="text-2xl font-bold text-gray-800 mt-3">
+                {currentQ.title}
+              </h3>
+            </div>
+
+            <div className="flex gap-8 flex-1">
+              {/* Text & Options */}
+              <div className={`${currentQ.image ? 'w-1/2' : 'w-full'}`}>
+                <p className="text-gray-600 text-lg leading-relaxed mb-8 font-medium">
+                  {currentQ.description}
+                </p>
+
+                <div className="space-y-3">
+                  {currentQ.options.map((opt, idx) => {
+                    const isSelected = answers[currentQ.id] === opt;
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => handleOptionSelect(opt)}
+                        className={`group flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                          isSelected
+                            ? 'bg-[#EFFFFF] border-[#49BBBD] shadow-md'
+                            : 'bg-white border-gray-100 hover:border-[#49BBBD]/40 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div
+                          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                            isSelected
+                              ? 'border-[#49BBBD] bg-[#49BBBD]'
+                              : 'border-gray-300 group-hover:border-[#49BBBD]'
+                          }`}
+                        >
+                          {isSelected && (
+                            <FaCheck className="text-white text-xs" />
+                          )}
+                        </div>
+                        <span
+                          className={`text-base font-medium ${isSelected ? 'text-[#49BBBD]' : 'text-gray-600'}`}
+                        >
+                          {opt}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              {item.items && (
-                <div className="ml-4 mt-2 text-xs text-gray-600 space-y-1">
-                  {item.items.map((sub, sidx) => (
-                    <div key={sidx} className="flex items-center gap-1">
-                      <div className="w-1 h-1 bg-[#49BBBD] rounded-full"></div>
-                      {sub}
-                    </div>
-                  ))}
+
+              {/* Image (If exists) */}
+              {currentQ.image && (
+                <div className="w-1/2">
+                  <div className="rounded-xl overflow-hidden border border-gray-100 shadow-sm h-full max-h-[400px]">
+                    <img
+                      src={currentQ.image}
+                      alt="Question visual"
+                      className="w-full h-full object-cover"
+                      onError={e =>
+                        (e.currentTarget.src =
+                          'https://via.placeholder.com/500x350?text=No+Image+Available')
+                      }
+                    />
+                  </div>
                 </div>
               )}
             </div>
-          ))}
+
+            {/* Footer Navigation */}
+            <div className="mt-10 pt-6 border-t border-gray-100 flex justify-between items-center">
+              <button
+                onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
+                disabled={currentQuestionIndex === 0}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <FaChevronLeft /> Previous
+              </button>
+
+              {currentQuestionIndex === questions.length - 1 ? (
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitted}
+                  className="bg-[#49BBBD] text-white px-10 py-3.5 rounded-xl font-bold shadow-lg shadow-teal-100 hover:bg-[#3EA8AA] hover:-translate-y-1 transition-all disabled:bg-gray-400"
+                >
+                  {isSubmitted ? 'Submitted' : 'Submit Exam'}
+                </button>
+              ) : (
+                <button
+                  onClick={() =>
+                    setCurrentIndex(prev =>
+                      Math.min(questions.length - 1, prev + 1)
+                    )
+                  }
+                  className="bg-gray-900 text-white px-8 py-3.5 rounded-xl font-bold flex items-center gap-2 hover:bg-black hover:-translate-y-1 transition-all shadow-lg shadow-gray-200"
+                >
+                  Next Question <FaChevronRight />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* --- RIGHT COLUMN: SIDEBAR --- */}
+        <div className="w-80 flex-shrink-0">
+          <div className="bg-white p-6 rounded-2xl shadow-sm sticky top-24 border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">
+              Question Palette
+            </h3>
+
+            {/* Progress Bar */}
+            <div className="mb-6">
+              <div className="flex justify-between text-xs text-gray-500 mb-1.5 font-semibold">
+                <span>Completed</span>
+                <span>{Math.round(progressPercentage)}%</span>
+              </div>
+              <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#49BBBD] transition-all duration-500 ease-out rounded-full"
+                  style={{ width: `${progressPercentage}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Grid câu hỏi */}
+            <div className="grid grid-cols-5 gap-3">
+              {questions.map((q, idx) => {
+                const isAnswered = !!answers[q.id];
+                const isCurrent = currentQuestionIndex === idx;
+
+                let btnClass =
+                  'w-10 h-10 rounded-xl text-sm font-bold flex items-center justify-center transition-all duration-200 ';
+
+                if (isCurrent) {
+                  btnClass +=
+                    'ring-2 ring-[#49BBBD] ring-offset-2 bg-white text-[#49BBBD]';
+                } else if (isAnswered) {
+                  btnClass +=
+                    'bg-[#49BBBD] text-white shadow-md shadow-teal-100 hover:bg-[#3EA8AA]';
+                } else {
+                  btnClass += 'bg-gray-100 text-gray-500 hover:bg-gray-200';
+                }
+
+                return (
+                  <button
+                    key={q.id}
+                    onClick={() => setCurrentIndex(prev => idx)}
+                    className={btnClass}
+                  >
+                    {idx + 1}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Chú thích */}
+            <div className="mt-8 pt-6 border-t border-gray-100 space-y-3">
+              <div className="flex items-center gap-3 text-xs font-bold text-gray-500">
+                <div className="w-3 h-3 rounded-full bg-[#49BBBD]" /> Answered
+              </div>
+              <div className="flex items-center gap-3 text-xs font-bold text-gray-500">
+                <div className="w-3 h-3 rounded-full border-2 border-[#49BBBD]" />{' '}
+                Current
+              </div>
+              <div className="flex items-center gap-3 text-xs font-bold text-gray-500">
+                <div className="w-3 h-3 rounded-full bg-gray-100" /> Not
+                Answered
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
+
+  // Helper để set index an toàn
+  function setCurrentIndex(cb: (prev: number) => number) {
+    setCurrentQuestionIndex(cb);
+  }
 }

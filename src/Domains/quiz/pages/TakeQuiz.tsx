@@ -1,210 +1,284 @@
-import { FaArrowLeft, FaClock, FaCheckCircle } from 'react-icons/fa';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Thêm để điều hướng quay lại
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import {
+  FileCheck,
+  ArrowLeft,
+  Clock,
+  ChevronDown,
+  ChevronUp,
+  History,
+  Award,
+  PlayCircle
+} from 'lucide-react';
 
-export default function TakeQuiz() {
+// Interface
+interface Quiz {
+  qid: string;
+  name: string;
+  description?: string;
+  available_from?: string;
+  available_until?: string;
+  status: string;
+}
+
+interface Attempt {
+  atid: string;
+  attempt_number: number;
+  score: number;
+  max_score: number;
+  started_at: string;
+  status: string;
+}
+
+export default function QuizList() {
+  const { clid } = useParams<{ clid: string }>();
   const navigate = useNavigate();
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
 
-  // Fake question
-  const question = {
-    id: 1,
-    title: 'Questions 1:',
-    description:
-      'TOTC’s school management software helps traditional and online schools manage scheduling, attendance, payments and virtual classrooms all in one secure cloud-based system.',
-    // SỬA ĐƯỜNG DẪN ẢNH TẠI ĐÂY:
-    // Vì ảnh nằm trong public/img/login.png nên ta gọi trực tiếp từ root là /img/...
-    image: '/img/login.png',
-    answers: [
-      'Lorem ipsum dolor sit amet',
-      'Consectetur adipiscing elit, sed do',
-      'Elusmod tempos Lorem ipsum',
-      'Lorem ipsum dolor sit amet',
-    ],
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // State mở rộng lịch sử
+  const [expandedQuizId, setExpandedQuizId] = useState<string | null>(null);
+  const [quizAttempts, setQuizAttempts] = useState<Attempt[]>([]);
+  const [loadingAttempts, setLoadingAttempts] = useState(false);
+
+  // State loading cho nút Take Quiz (để tránh double-click)
+  const [creatingAttemptId, setCreatingAttemptId] = useState<string | null>(null);
+
+  // 1. Lấy danh sách Quiz
+  useEffect(() => {
+    const fetchQuizzes = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(
+          `http://localhost:3000/quizzes/class/${clid}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setQuizzes(response.data);
+      } catch (err) {
+        console.error('Failed to fetch quizzes:', err);
+        setError('Failed to load quizzes. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (clid) fetchQuizzes();
+  }, [clid]);
+
+  // 2. Toggle xem lịch sử
+  const handleToggleHistory = async (quizId: string) => {
+    if (expandedQuizId === quizId) {
+      setExpandedQuizId(null);
+      setQuizAttempts([]);
+      return;
+    }
+
+    setExpandedQuizId(quizId);
+    setLoadingAttempts(true);
+
+    const token = localStorage.getItem('token');
+    const studentId = localStorage.getItem('studentId');
+
+    try {
+      const response = await axios.get(
+        `http://localhost:3000/attempts/quiz/${quizId}/student/${studentId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setQuizAttempts(response.data);
+    } catch (err) {
+      console.error('Failed to fetch history:', err);
+    } finally {
+      setLoadingAttempts(false);
+    }
   };
 
-  const contents = [
-    { title: 'Get Started', duration: '1 Hour', active: false },
-    {
-      title: 'Illustrator Structures',
-      duration: '2 Hour',
-      active: true,
-      items: [
-        'Lorem ipsum dolor sit amet',
-        'Lorem ipsum dolor',
-        'Lorem ipsum dolor sit amet',
-      ],
-    },
-    { title: 'Using Illustrator', duration: '1 Hour', active: false },
-    { title: 'What is Pandas?', duration: '12:54', active: false },
-    { title: 'Work with Numpy', duration: '59:00', active: false },
-  ];
+  // 3. XỬ LÝ NÚT TAKE QUIZ (Logic bạn yêu cầu)
+  const handleTakeQuiz = async (quizId: string) => {
+    const token = localStorage.getItem('token');
+    const studentId = localStorage.getItem('studentId');
+
+    // Kiểm tra login kỹ càng
+    if (!studentId || !token) {
+      alert("Vui lòng đăng nhập lại để thực hiện bài thi.");
+      return;
+    }
+
+    setCreatingAttemptId(quizId); // Bật trạng thái loading cho nút này
+
+    try {
+      // Gọi API tạo lượt làm bài mới
+      const response = await axios.post(
+        'http://localhost:3000/attempts',
+        { quiz_id: quizId, student_id: studentId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // API trả về attempt mới tạo (có chứa atid)
+      const newAttempt = response.data;
+      
+      // Điều hướng sang trang làm bài với ID vừa tạo
+      navigate(`/take-quiz/${newAttempt.atid}`); 
+
+    } catch (err: any) {
+      console.error("Error creating attempt:", err);
+      const msg = err.response?.data?.message || 'Không thể bắt đầu bài thi. Vui lòng thử lại.';
+      alert(msg);
+    } finally {
+      setCreatingAttemptId(null); // Tắt loading
+    }
+  };
+
+  if (loading) return <div className="text-center py-10">Loading quizzes...</div>;
+  if (error) return <div className="text-center py-10 text-red-500">{error}</div>;
 
   return (
-    <div className="min-h-screen bg-[#EAF6FF] p-6 flex gap-6">
-      {/* LEFT COLUMN */}
-      <div className="w-3/4">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="w-[80vw] mx-auto">
         {/* Header */}
-        <div className="bg-white p-5 rounded-xl shadow flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate(-1)} // Quay lại trang trước đó
-              className="bg-[#49BBBD] p-3 rounded-lg text-white hover:bg-[#3EA8AA] transition-colors"
-            >
-              <FaArrowLeft size={16} />
-            </button>
-
-            <div>
-              <h2 className="text-xl font-bold text-gray-800">
-                UX/UI Design Conference Meeting
-              </h2>
-              <div className="flex gap-6 text-gray-500 text-sm mt-1">
-                <span>9 Questions</span>
-                <span className="flex items-center gap-2">
-                  <FaClock size={14} />
-                  5h 30min
-                </span>
-              </div>
-            </div>
-          </div>
-          <button className="text-gray-400 hover:text-gray-600 transition-colors text-xl">
-            ⚙
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6 flex items-center gap-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <ArrowLeft className="w-6 h-6 text-gray-600" />
           </button>
+          <h1 className="text-2xl font-bold text-gray-800">Class Quizzes</h1>
         </div>
 
-        {/* QUESTION AREA */}
-        <div className="mt-10 p-6">
-          <h3 className="text-3xl font-bold text-[#49BBBD] mb-4">
-            {question.title}
-          </h3>
-
-          <div className="flex gap-10 items-start">
-            {/* QUESTION LEFT SIDE */}
-            <div className="w-1/2">
-              <p className="text-gray-600 leading-relaxed mb-6 text-lg">
-                {question.description}
-              </p>
-
-              {/* ANSWER OPTIONS */}
-              <div className="space-y-4">
-                {question.answers.map((ans, idx) => {
-                  const letter = String.fromCharCode(65 + idx);
-                  const isSelected = selectedAnswer === letter;
-
-                  return (
-                    <div
-                      key={idx}
-                      className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer border-2 transition-all ${
-                        isSelected
-                          ? 'bg-[#D3F5D9] border-[#49BBBD] shadow-sm'
-                          : 'bg-white border-gray-100 hover:border-gray-300'
-                      }`}
-                      onClick={() => setSelectedAnswer(letter)}
-                    >
-                      <FaCheckCircle
-                        className={`${isSelected ? 'text-[#49BBBD]' : 'text-gray-200'}`}
-                        size={20}
-                      />
-                      <span
-                        className={`font-medium ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}
+        <div className="space-y-4">
+          {quizzes.length > 0 ? (
+            quizzes.map((quiz) => (
+              <div
+                key={quiz.qid}
+                className="bg-white rounded-xl shadow border overflow-hidden transition-all hover:shadow-md"
+              >
+                <div className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  
+                  {/* Thông tin Quiz */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <FileCheck className="w-6 h-6 text-[#49BBBD]" />
+                      <h3 className="font-bold text-lg text-gray-800">
+                        {quiz.name}
+                      </h3>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          quiz.status === 'published'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
                       >
-                        {letter}. {ans}
+                        {quiz.status}
                       </span>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                    {quiz.description && (
+                      <p className="text-gray-500 text-sm mb-2">
+                        {quiz.description}
+                      </p>
+                    )}
+                    {quiz.available_until && (
+                      <p className="text-xs text-red-500 flex items-center gap-1">
+                        <Clock size={12} /> Deadline:{' '}
+                        {new Date(quiz.available_until).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
 
-            {/* QUESTION IMAGE AREA */}
-            <div className="w-1/2 flex justify-center items-center">
-              <div className="bg-white p-3 rounded-[2rem] shadow-2xl border-4 border-white transform hover:scale-[1.02] transition-transform duration-300">
-                <img
-                  src={question.image}
-                  alt="quiz-illustration"
-                  className="rounded-[1.5rem] w-full h-[380px] object-cover"
-                  // Hàm xử lý nếu ảnh không tồn tại hoặc sai đường dẫn
-                  onError={e => {
-                    const target = e.target as HTMLImageElement;
-                    target.src =
-                      'https://via.placeholder.com/600x400?text=Image+Not+Found';
-                    target.className =
-                      'rounded-[1.5rem] w-full h-[380px] object-contain bg-gray-100';
-                  }}
-                />
-              </div>
-            </div>
-          </div>
+                  {/* Cụm nút thao tác */}
+                  <div className="flex items-center gap-3">
+                    {/* Nút Xem lịch sử */}
+                    <button
+                      onClick={() => handleToggleHistory(quiz.qid)}
+                      className={`p-2 rounded-full transition-colors border border-gray-200 ${
+                        expandedQuizId === quiz.qid 
+                          ? 'bg-gray-100 text-gray-800' 
+                          : 'hover:bg-gray-50 text-gray-500'
+                      }`}
+                      title="View Attempt History"
+                    >
+                      {expandedQuizId === quiz.qid ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    </button>
 
-          {/* LETTER ANSWER ROW */}
-          <div className="mt-10 flex items-center justify-center gap-6">
-            {['A', 'B', 'C', 'D', 'E'].map((l, i) => (
-              <button
-                key={i}
-                onClick={() => setSelectedAnswer(l)}
-                className={`w-12 h-12 rounded-xl text-lg font-bold border-2 transition-all ${
-                  selectedAnswer === l
-                    ? 'bg-[#49BBBD] border-[#49BBBD] text-white scale-110 shadow-md'
-                    : 'bg-white border-gray-200 text-[#49BBBD] hover:bg-[#D7F3F4]'
-                }`}
-              >
-                {l}
-              </button>
-            ))}
-          </div>
-
-          {/* SUBMIT BUTTON */}
-          <div className="mt-10 flex justify-between items-center">
-            <button className="text-gray-500 font-semibold hover:text-gray-700">
-              Skip Question
-            </button>
-            <button className="bg-[#49BBBD] text-white font-bold px-12 py-3 rounded-xl shadow-lg hover:bg-[#3EA8AA] transition-all transform active:scale-95">
-              Next Question
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* RIGHT SIDEBAR (Giữ nguyên) */}
-      <div className="w-1/4 bg-white p-5 rounded-xl shadow self-start sticky top-6">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-bold text-gray-700">Course Contents</h3>
-          <span className="text-[#49BBBD] text-xl">📅</span>
-        </div>
-
-        <div className="mt-2 mb-5">
-          <div className="text-xs text-gray-600 mb-1">2/5 COMPLETED</div>
-          <div className="w-full h-2 bg-gray-200 rounded-full">
-            <div className="h-2 bg-[#49BBBD] w-2/5 rounded-full"></div>
-          </div>
-        </div>
-
-        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
-          {contents.map((item, idx) => (
-            <div
-              key={idx}
-              className={`p-4 rounded-lg border-2 cursor-pointer transition ${
-                item.active
-                  ? 'border-[#49BBBD] bg-[#EFFFFF]'
-                  : 'border-transparent bg-gray-50 hover:bg-gray-100'
-              }`}
-            >
-              <h4 className="font-semibold text-gray-700">{item.title}</h4>
-              <div className="text-gray-500 text-sm flex items-center gap-2 mt-1">
-                <FaClock size={14} /> {item.duration}
-              </div>
-              {item.items && (
-                <div className="ml-4 mt-2 text-sm text-gray-600 space-y-1">
-                  {item.items.map((sub, sidx) => (
-                    <div key={sidx} className="flex items-center gap-2">
-                      <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-                      {sub}
-                    </div>
-                  ))}
+                    {/* NÚT TAKE QUIZ */}
+                    <button
+                      onClick={() => handleTakeQuiz(quiz.qid)}
+                      disabled={creatingAttemptId === quiz.qid} // Disable khi đang loading
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors shadow-sm flex items-center gap-2 ${
+                        creatingAttemptId === quiz.qid
+                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                          : 'bg-[#49BBBD] text-white hover:bg-[#3a9ea0]'
+                      }`}
+                    >
+                      {creatingAttemptId === quiz.qid ? (
+                        'Creating...'
+                      ) : (
+                        <>
+                          <PlayCircle size={18} /> Take Quiz
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
-              )}
+
+                {/* Phần Lịch sử Dropdown */}
+                {expandedQuizId === quiz.qid && (
+                  <div className="bg-gray-50 border-t p-6 animate-fadeIn">
+                    <h4 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                      <History className="w-4 h-4" /> History Attempts
+                    </h4>
+
+                    {loadingAttempts ? (
+                      <p className="text-gray-500 text-sm">Loading history...</p>
+                    ) : quizAttempts.length > 0 ? (
+                      <div className="space-y-3">
+                        {quizAttempts.map((att) => (
+                          <div
+                            key={att.atid}
+                            className="bg-white p-4 rounded-lg border flex justify-between items-center hover:bg-gray-50 transition-colors"
+                          >
+                            <div>
+                              <p className="font-medium text-gray-800">
+                                Attempt #{att.attempt_number}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {new Date(att.started_at).toLocaleString()}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <div className="flex items-center gap-1 text-sm font-bold text-[#49BBBD]">
+                                <Award size={16} />
+                                {att.score !== null ? att.score : '--'}{' '}
+                                <span className="text-gray-400 font-normal">pts</span>
+                              </div>
+                              <span className={`text-xs font-medium ${
+                                  att.status === 'submitted'
+                                    ? 'text-green-600'
+                                    : 'text-yellow-600'
+                                }`}
+                              >
+                                {att.status === 'submitted' ? 'Completed' : 'In Progress'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 italic bg-white p-4 rounded border text-center">
+                        You haven't taken this quiz yet.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-12 text-gray-500 bg-white rounded-xl shadow border">
+              <FileCheck className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+              <p>No quizzes available for this class</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>
