@@ -1,65 +1,32 @@
-import { useState } from 'react';
-import { FaArrowLeft, FaSearch, FaPaperPlane } from 'react-icons/fa';
+import { useEffect, useState } from 'react';
+import {
+  FaArrowLeft,
+  FaSearch,
+  FaPaperPlane,
+  FaBell,
+  FaCommentDots,
+  FaInfoCircle,
+  FaExclamationTriangle,
+  FaCheckCircle,
+  FaClock,
+  FaEnvelopeOpenText,
+  FaEnvelope,
+  FaPlus,
+  FaTimes,
+} from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { toast } from 'react-toastify'; // Khuyến nghị dùng toast để thông báo kết quả
 
-const users = [
-  {
-    id: 1,
-    name: 'TKBOT',
-    avatar: 'https://cdn-icons-png.flaticon.com/512/4712/4712035.png',
-    lastMsg: 'Hệ thống đã sẵn sàng hỗ trợ bạn...',
-    time: '6:57 PM',
-    online: true,
-  },
-  {
-    id: 2,
-    name: 'Cody Fisher',
-    avatar: 'https://i.pravatar.cc/150?u=cody',
-    lastMsg: 'The passage experienced…',
-    time: '6:32 PM',
-    online: true,
-  },
-  {
-    id: 3,
-    name: 'Savannah Nguyen',
-    avatar: 'https://i.pravatar.cc/150?u=savannah',
-    lastMsg: 'The passage experienced…',
-    time: '6:20 PM',
-    online: false,
-  },
-  {
-    id: 4,
-    name: 'Robert Fox',
-    avatar: 'https://i.pravatar.cc/150?u=robert',
-    lastMsg: 'The passage experienced…',
-    time: '6:15 PM',
-    online: true,
-  },
-  {
-    id: 5,
-    name: 'Bessie Cooper',
-    avatar: 'https://i.pravatar.cc/150?u=bessie',
-    lastMsg: 'The passage experienced…',
-    time: '6:07 PM',
-    online: true,
-  },
-  {
-    id: 6,
-    name: 'Theresa Webb',
-    avatar: 'https://i.pravatar.cc/150?u=theresa',
-    lastMsg: 'The passage experienced…',
-    time: '5:57 PM',
-    online: false,
-  },
-  {
-    id: 7,
-    name: 'Kathryn Murphy',
-    avatar: 'https://i.pravatar.cc/150?u=kathryn',
-    lastMsg: 'The passage experienced…',
-    time: '5:37 PM',
-    online: true,
-  },
-];
+// --- INTERFACES ---
+interface User {
+  id: number | string;
+  name: string;
+  avatar: string;
+  lastMsg: string;
+  time: string;
+  online: boolean;
+}
 
 interface Message {
   sender: 'me' | 'bot';
@@ -67,146 +34,601 @@ interface Message {
   time: string;
 }
 
+interface Notification {
+  nid: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'success' | 'system';
+  is_read: boolean;
+  created_at: string;
+}
+
+// Mock users
+const mockUsers: User[] = [
+  {
+    id: 1,
+    name: 'TKBOT',
+    avatar: 'https://cdn-icons-png.flaticon.com/512/4712/4712035.png',
+    lastMsg: 'Hệ thống sẵn sàng...',
+    time: 'Now',
+    online: true,
+  },
+  {
+    id: 2,
+    name: 'Cody Fisher',
+    avatar: 'https://i.pravatar.cc/150?u=cody',
+    lastMsg: 'Hello there...',
+    time: '10m',
+    online: true,
+  },
+  {
+    id: 3,
+    name: 'Savannah Nguyen',
+    avatar: 'https://i.pravatar.cc/150?u=savannah',
+    lastMsg: 'Sent a file',
+    time: '1h',
+    online: false,
+  },
+];
+
 export default function ChatPage() {
   const navigate = useNavigate();
-  const [selectedUser] = useState(users[0]);
+  const userRole = localStorage.getItem('userRole');
+
+  // 👇 Check quyền tạo thông báo
+  const canCreateNotification = userRole === 'Lecturer' || userRole === 'Admin';
+
+  // --- STATE ---
+  const [activeTab, setActiveTab] = useState<'chat' | 'notification'>('chat');
+
+  // Chat State
+  const [selectedUser, setSelectedUser] = useState<User>(mockUsers[0]);
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: 'bot',
-      text: 'Chào mừng bạn! TKBOT có thể giúp gì cho bạn?',
-      time: '07:14 PM',
+      text: 'Chào mừng bạn! TKBOT có thể giúp gì?',
+      time: 'Now',
     },
-    { sender: 'me', text: 'Tôi muốn hỏi về lịch học.', time: '07:18 PM' },
   ]);
   const [input, setInput] = useState('');
 
-  const getTime = () => {
-    const now = new Date();
-    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  // Notification State
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [selectedNotification, setSelectedNotification] =
+    useState<Notification | null>(null);
+  const [loadingNoti, setLoadingNoti] = useState(false);
+
+  // Modal State
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    message: '',
+    type: 'info',
+    recipient_uid: '', // ID người nhận (nhập tay hoặc chọn)
+    related_type: '',
+    related_id: '',
+  });
+
+  // --- API FUNCTIONS ---
+
+  const fetchNotifications = async () => {
+    setLoadingNoti(true);
+    try {
+      const token = localStorage.getItem('token');
+      // Logic API Role
+      const endpoint =
+        userRole === 'Student'
+          ? 'http://localhost:3000/notifications/me'
+          : 'http://localhost:3000/notifications';
+
+      const res = await axios.get(endpoint, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const sorted = res.data.sort(
+        (a: Notification, b: Notification) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      setNotifications(sorted);
+    } catch (error) {
+      console.error('Failed to fetch notifications', error);
+    } finally {
+      setLoadingNoti(false);
+    }
   };
 
-  const sendToBot = async (text: string) => {};
+  const markAsRead = async (nid: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch(
+        `http://localhost:3000/notifications/${nid}/mark-as-read`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setNotifications(prev =>
+        prev.map(n => (n.nid === nid ? { ...n, is_read: true } : n))
+      );
+
+      if (selectedNotification?.nid === nid) {
+        setSelectedNotification(prev =>
+          prev ? { ...prev, is_read: true } : null
+        );
+      }
+    } catch (error) {
+      console.error('Failed to mark notification as read', error);
+    }
+  };
+
+  // 👇 HÀM TẠO THÔNG BÁO MỚI (POST)
+  const handleCreateNotification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title || !formData.message || !formData.recipient_uid) {
+      alert('Vui lòng điền đầy đủ thông tin bắt buộc!');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('http://localhost:3000/notifications', formData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      alert('Tạo thông báo thành công!'); // Có thể thay bằng toast.success
+      setShowModal(false);
+      setFormData({
+        title: '',
+        message: '',
+        type: 'info',
+        recipient_uid: '',
+        related_type: '',
+        related_id: '',
+      });
+
+      // Refresh danh sách nếu là Admin (để thấy log) hoặc logic khác
+      fetchNotifications();
+    } catch (error) {
+      console.error('Create notification failed', error);
+      alert('Lỗi khi tạo thông báo.');
+    }
+  };
+
+  const handleSelectNotification = (notif: Notification) => {
+    setSelectedNotification(notif);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'notification') {
+      fetchNotifications();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  // --- HELPER FUNCTIONS ---
+  const getTime = () =>
+    new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   const handleSend = () => {
     if (!input.trim()) return;
     const newMessage: Message = { sender: 'me', text: input, time: getTime() };
     setMessages(prev => [...prev, newMessage]);
-    sendToBot(input);
     setInput('');
+    setTimeout(() => {
+      setMessages(prev => [
+        ...prev,
+        { sender: 'bot', text: 'Tôi là bot...', time: getTime() },
+      ]);
+    }, 1000);
+  };
+
+  const getNotiIcon = (type: string, size: number = 16) => {
+    switch (type) {
+      case 'warning':
+        return (
+          <FaExclamationTriangle size={size} className="text-orange-500" />
+        );
+      case 'success':
+        return <FaCheckCircle size={size} className="text-green-500" />;
+      case 'system':
+        return <FaBell size={size} className="text-blue-500" />;
+      default:
+        return <FaInfoCircle size={size} className="text-gray-500" />;
+    }
   };
 
   return (
-    <div className="min-h-screen flex bg-[#F5F7FA]">
-      <div className="w-1/4 bg-white border-r p-6 space-y-4">
-        <button
-          className="p-2 rounded-lg bg-[#49BBBD] text-white w-fit hover:bg-[#3aa4a6] transition-colors"
-          onClick={() => navigate('/')}
-        >
-          <FaArrowLeft />
-        </button>
+    <div className="min-h-screen flex bg-[#F5F7FA] relative">
+      {/* --- SIDEBAR TRÁI --- */}
+      <div className="w-1/4 bg-white border-r flex flex-col h-screen">
+        <div className="p-6 pb-2 space-y-4">
+          <button
+            className="p-2 rounded-lg bg-[#49BBBD] text-white w-fit hover:bg-[#3aa4a6] transition-colors shadow-sm"
+            onClick={() => navigate('/')}
+          >
+            <FaArrowLeft />
+          </button>
 
-        <h1 className="text-3xl font-bold text-gray-800 mt-3">Chat</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mt-3">Trung tâm</h1>
 
-        <div className="relative mt-4">
-          <FaSearch className="absolute top-3 left-3 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Tìm kiếm hội thoại..."
-            className="w-full pl-10 pr-4 py-2 border rounded-lg text-gray-800 focus:ring-2 focus:ring-[#49BBBD]/50 outline-none"
-          />
-        </div>
+          {/* Search */}
+          <div className="relative mt-4">
+            <FaSearch className="absolute top-3 left-3 text-gray-400" />
+            <input
+              type="text"
+              placeholder={
+                activeTab === 'chat'
+                  ? 'Tìm kiếm hội thoại...'
+                  : 'Tìm kiếm thông báo...'
+              }
+              className="w-full pl-10 pr-4 py-2 border rounded-xl bg-gray-50 text-gray-800 focus:ring-2 focus:ring-[#49BBBD]/30 outline-none transition-all"
+            />
+          </div>
 
-        <div className="space-y-3 overflow-y-auto max-h-[calc(100vh-200px)]">
-          {users.map(user => (
-            <div
-              key={user.id}
-              className={`flex items-center p-3 rounded-xl cursor-pointer transition-all ${
-                selectedUser.id === user.id
-                  ? 'bg-[#F0F6FF]'
-                  : 'hover:bg-gray-50'
+          {/* Tabs */}
+          <div className="flex bg-gray-100 p-1 rounded-xl mt-4">
+            <button
+              onClick={() => setActiveTab('chat')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === 'chat'
+                  ? 'bg-white text-[#49BBBD] shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              <div className="relative">
-                <img
-                  src={user.avatar}
-                  className="w-12 h-12 rounded-full mr-3 object-cover border border-gray-100"
-                  alt={user.name}
-                />
-                {user.online && (
-                  <span className="absolute bottom-0 right-3 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-800 truncate">
-                  {user.name}
-                </h3>
-                <p className="text-gray-500 text-sm truncate">{user.lastMsg}</p>
-              </div>
-              <div className="text-gray-400 text-[10px]">{user.time}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex-1 flex flex-col p-6">
-        <div className="flex items-center gap-3 p-4 bg-white rounded-2xl shadow-sm border border-gray-100">
-          <img
-            src={selectedUser.avatar}
-            className="w-12 h-12 rounded-full object-cover"
-            alt={selectedUser.name}
-          />
-          <div>
-            <h2 className="font-bold text-gray-800 text-lg">
-              {selectedUser.name}
-            </h2>
-            <p className="text-green-500 text-xs flex items-center gap-1">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              Đang trực tuyến
-            </p>
-          </div>
-        </div>
-
-        <div className="flex-1 mt-6 space-y-6 overflow-y-auto pr-4 scrollbar-hide">
-          {messages.map((msg, index) => (
-            <div
-              key={index}
-              className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}
+              <FaCommentDots /> Tin nhắn
+            </button>
+            <button
+              onClick={() => setActiveTab('notification')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === 'notification'
+                  ? 'bg-white text-[#49BBBD] shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
             >
+              <FaBell /> Thông báo
+            </button>
+          </div>
+
+          {/* 👇 NÚT TẠO THÔNG BÁO (Chỉ hiện nếu là Lecturer/Admin và đang ở tab Notification) */}
+          {activeTab === 'notification' && canCreateNotification && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="w-full mt-2 bg-[#49BBBD] text-white py-2 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-[#3aa4a6] transition-all shadow-sm active:scale-95"
+            >
+              <FaPlus size={14} /> Tạo thông báo mới
+            </button>
+          )}
+        </div>
+
+        {/* List Content */}
+        <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2 custom-scrollbar">
+          {/* TAB CHAT */}
+          {activeTab === 'chat' &&
+            mockUsers.map(user => (
               <div
-                className={`px-4 py-3 rounded-2xl max-w-lg text-sm shadow-sm ${
-                  msg.sender === 'me'
-                    ? 'bg-[#49BBBD] text-white'
-                    : 'bg-white text-gray-800 border border-gray-100'
-                }`}
+                key={user.id}
+                onClick={() => setSelectedUser(user)}
+                className={`flex items-center p-3 rounded-xl cursor-pointer transition-all border border-transparent ${selectedUser.id === user.id ? 'bg-[#F0F6FF] border-blue-100' : 'hover:bg-gray-50'}`}
               >
-                {msg.text}
-                <div
-                  className={`text-[10px] mt-1 ${msg.sender === 'me' ? 'text-blue-100' : 'text-gray-400'}`}
-                >
-                  {msg.time}
+                <div className="relative">
+                  <img
+                    src={user.avatar}
+                    className="w-12 h-12 rounded-full mr-3 object-cover border border-gray-100"
+                    alt={user.name}
+                  />
+                  {user.online && (
+                    <span className="absolute bottom-0 right-3 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center mb-1">
+                    <h3 className="font-semibold text-gray-800 truncate">
+                      {user.name}
+                    </h3>
+                    <span className="text-gray-400 text-[10px]">
+                      {user.time}
+                    </span>
+                  </div>
+                  <p
+                    className={`text-sm truncate ${selectedUser.id === user.id ? 'text-[#49BBBD]' : 'text-gray-500'}`}
+                  >
+                    {user.lastMsg}
+                  </p>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
 
-        <div className="mt-4 p-3 bg-white rounded-2xl shadow-lg border border-gray-100 flex items-center gap-3">
-          <input
-            type="text"
-            placeholder="Viết tin nhắn..."
-            className="flex-1 px-4 py-2 text-gray-800 outline-none"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSend()}
-          />
-          <button
-            onClick={handleSend}
-            className="bg-[#49BBBD] hover:bg-[#3aa4a6] text-white p-3 rounded-xl transition-all active:scale-95"
-          >
-            <FaPaperPlane size={18} />
-          </button>
+          {/* TAB NOTIFICATION */}
+          {activeTab === 'notification' &&
+            (loadingNoti ? (
+              <div className="text-center py-10 text-gray-400 text-sm">
+                Đang tải...
+              </div>
+            ) : notifications.length > 0 ? (
+              notifications.map(notif => (
+                <div
+                  key={notif.nid}
+                  onClick={() => handleSelectNotification(notif)}
+                  className={`p-4 rounded-xl cursor-pointer transition-all border relative overflow-hidden group ${selectedNotification?.nid === notif.nid ? 'bg-[#F0F6FF] border-[#49BBBD]' : !notif.is_read ? 'bg-blue-50 border-blue-100' : 'bg-white hover:bg-gray-50 border-gray-100'}`}
+                >
+                  <div className="flex justify-between items-start mb-1">
+                    <div className="flex items-center gap-2">
+                      <div className="mt-0.5">{getNotiIcon(notif.type)}</div>
+                      <h4
+                        className={`font-semibold text-sm ${!notif.is_read ? 'text-gray-900' : 'text-gray-700'}`}
+                      >
+                        {notif.title}
+                      </h4>
+                    </div>
+                    {!notif.is_read && (
+                      <span className="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
+                    )}
+                  </div>
+                  <p className="text-gray-600 text-xs line-clamp-2 leading-relaxed mt-1 pl-6">
+                    {notif.message}
+                  </p>
+                  <div className="flex justify-end mt-2">
+                    <span className="text-[10px] text-gray-400 bg-gray-50 px-2 py-0.5 rounded">
+                      {new Date(notif.created_at).toLocaleString('vi-VN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        day: '2-digit',
+                        month: '2-digit',
+                      })}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-12 text-gray-400 text-sm">
+                Không có thông báo.
+              </div>
+            ))}
         </div>
       </div>
+
+      {/* --- MAIN CONTENT AREA --- */}
+      <div className="flex-1 flex flex-col p-6 h-screen">
+        {activeTab === 'chat' && (
+          <>
+            <div className="flex items-center gap-3 p-4 bg-white rounded-2xl shadow-sm border border-gray-100 shrink-0">
+              <img
+                src={selectedUser.avatar}
+                className="w-12 h-12 rounded-full object-cover"
+                alt={selectedUser.name}
+              />
+              <div>
+                <h2 className="font-bold text-gray-800 text-lg">
+                  {selectedUser.name}
+                </h2>
+                <p className="text-green-500 text-xs flex items-center gap-1">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>{' '}
+                  Đang trực tuyến
+                </p>
+              </div>
+            </div>
+            <div className="flex-1 mt-6 space-y-6 overflow-y-auto pr-4 scrollbar-hide">
+              {messages.map((msg, index) => (
+                <div
+                  key={index}
+                  className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`px-4 py-3 rounded-2xl max-w-lg text-sm shadow-sm ${msg.sender === 'me' ? 'bg-[#49BBBD] text-white rounded-br-none' : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'}`}
+                  >
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 p-3 bg-white rounded-2xl shadow-lg border border-gray-100 flex items-center gap-3 shrink-0">
+              <input
+                type="text"
+                placeholder="Viết tin nhắn..."
+                className="flex-1 px-4 py-2 text-gray-800 outline-none"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSend()}
+              />
+              <button
+                onClick={handleSend}
+                className="bg-[#49BBBD] text-white p-3 rounded-xl"
+              >
+                <FaPaperPlane size={18} />
+              </button>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'notification' &&
+          (selectedNotification ? (
+            <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 p-8 overflow-y-auto animate-fadeIn">
+              <div className="flex items-start gap-4 border-b border-gray-100 pb-6 mb-6">
+                <div className="p-3 bg-gray-50 rounded-full">
+                  {getNotiIcon(selectedNotification.type, 32)}
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                    {selectedNotification.title}
+                  </h2>
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <FaClock />{' '}
+                      {new Date(selectedNotification.created_at).toLocaleString(
+                        'vi-VN'
+                      )}
+                    </span>
+                    {selectedNotification.is_read ? (
+                      <span className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1 rounded-lg border border-green-200 font-semibold text-sm">
+                        <FaEnvelopeOpenText /> Đã đọc
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => markAsRead(selectedNotification.nid)}
+                        className="flex items-center gap-2 text-white bg-[#49BBBD] hover:bg-[#3aa4a6] px-4 py-1.5 rounded-lg transition-all shadow-sm active:scale-95 text-sm font-medium"
+                      >
+                        <FaEnvelope /> Đánh dấu đã đọc
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="text-gray-700 leading-relaxed text-lg whitespace-pre-wrap">
+                {selectedNotification.message}
+              </div>
+              <div className="mt-10 pt-6 border-t border-gray-100 flex justify-end">
+                <button
+                  className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors text-sm"
+                  onClick={() => setSelectedNotification(null)}
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-gray-400 bg-white rounded-2xl border border-dashed border-gray-300">
+              <div className="text-center">
+                <FaBell className="mx-auto text-5xl mb-4 text-[#49BBBD] opacity-30" />
+                <p>Chọn một thông báo để xem chi tiết</p>
+              </div>
+            </div>
+          ))}
+      </div>
+
+      {/* 👇 MODAL TẠO THÔNG BÁO */}
+      {showModal && (
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fadeIn">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-[#49BBBD] text-white">
+              <h3 className="font-bold text-lg">Tạo thông báo mới</h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="hover:bg-white/20 p-1 rounded-full transition"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateNotification} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tiêu đề <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#49BBBD] outline-none"
+                  placeholder="Ví dụ: Thông báo nghỉ học..."
+                  value={formData.title}
+                  onChange={e =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nội dung <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#49BBBD] outline-none"
+                  rows={3}
+                  placeholder="Nhập nội dung chi tiết..."
+                  value={formData.message}
+                  onChange={e =>
+                    setFormData({ ...formData, message: e.target.value })
+                  }
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Loại thông báo
+                  </label>
+                  <select
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#49BBBD] outline-none bg-white"
+                    value={formData.type}
+                    onChange={e =>
+                      setFormData({ ...formData, type: e.target.value })
+                    }
+                  >
+                    <option value="info">Info (Thông tin)</option>
+                    <option value="warning">Warning (Cảnh báo)</option>
+                    <option value="success">Success (Thành công)</option>
+                    <option value="system">System (Hệ thống)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    ID Người nhận <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#49BBBD] outline-none"
+                    placeholder="User ID..."
+                    value={formData.recipient_uid}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        recipient_uid: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100 mt-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Related Type (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-1.5 border rounded text-sm outline-none"
+                    placeholder="Ex: Quiz, Course..."
+                    value={formData.related_type}
+                    onChange={e =>
+                      setFormData({ ...formData, related_type: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Related ID (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-1.5 border rounded text-sm outline-none"
+                    placeholder="ID..."
+                    value={formData.related_id}
+                    onChange={e =>
+                      setFormData({ ...formData, related_id: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 text-white bg-[#49BBBD] hover:bg-[#3aa4a6] rounded-lg font-bold transition shadow-md active:scale-95"
+                >
+                  Gửi thông báo
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

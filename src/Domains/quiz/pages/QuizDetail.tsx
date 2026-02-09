@@ -1,0 +1,251 @@
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
+import {
+  ArrowLeft,
+  History,
+  PlayCircle,
+  Award,
+  Calendar,
+  CheckCircle,
+  Clock,
+} from 'lucide-react';
+import { toast } from 'react-toastify'; // Nhớ cài react-toastify nếu chưa có
+
+interface Attempt {
+  atid: string;
+  attempt_number: number;
+  score: number;
+  max_score: number;
+  started_at: string;
+  completed_at?: string;
+  status: string;
+}
+
+export default function QuizDetail() {
+  const { qid } = useParams<{ qid: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const quizName = location.state?.quizName || 'Chi tiết bài thi';
+
+  const [attempts, setAttempts] = useState<Attempt[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [starting, setStarting] = useState(false);
+
+  // --- PHẦN 1: GỌI API LẤY LỊCH SỬ ---
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const studentId = localStorage.getItem('studentId');
+
+        if (!studentId || !qid) return;
+
+        const url = `http://localhost:3000/attempts/quiz/${qid}/student/${studentId}`;
+        const response = await axios.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // Xử lý dữ liệu trả về (có thể bọc trong data hoặc trả về mảng luôn)
+        let dataToSet = [];
+        if (Array.isArray(response.data)) {
+          dataToSet = response.data;
+        } else if (response.data && Array.isArray(response.data.data)) {
+          dataToSet = response.data.data;
+        }
+
+        setAttempts(
+          dataToSet.sort(
+            (a: Attempt, b: Attempt) =>
+              new Date(b.started_at).getTime() -
+              new Date(a.started_at).getTime()
+          )
+        );
+      } catch (error) {
+        console.error('Lỗi tải lịch sử:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, [qid]);
+
+  // --- PHẦN 2: XỬ LÝ LÀM BÀI (GỌI API THẬT) ---
+  const handleStartQuiz = async () => {
+    const token = localStorage.getItem('token');
+    const studentId = localStorage.getItem('studentId');
+
+    if (!studentId) {
+      toast.error('Lỗi: Không tìm thấy thông tin sinh viên.');
+      return;
+    }
+
+    setStarting(true);
+    try {
+      console.log('🚀 Đang gọi API tạo bài thi...');
+
+      // Payload gửi lên backend
+      const payload = {
+        quiz_id: qid,
+        student_id: studentId,
+      };
+
+      // Gọi API thật
+      const response = await axios.post(
+        'http://localhost:3000/attempts',
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      console.log('✅ Kết quả tạo bài thi:', response.data);
+
+      // Lấy ID bài thi từ response
+      const newAttemptId = response.data.atid || response.data.id;
+
+      if (newAttemptId) {
+        // Chuyển sang trang làm bài với ID thật
+        navigate(`/take-quiz/${newAttemptId}`);
+      } else {
+        toast.error('Không lấy được ID bài thi từ hệ thống.');
+      }
+    } catch (err: any) {
+      console.error('❌ Lỗi tạo bài thi:', err);
+      const message =
+        err.response?.data?.message || 'Không thể bắt đầu bài thi.';
+      toast.error(`Lỗi: ${message}`);
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  // Tính điểm cao nhất
+  const bestScore = attempts.reduce(
+    (max, att) => (att.score > max ? att.score : max),
+    0
+  );
+
+  if (loading)
+    return (
+      <div className="text-center py-10 text-gray-500">Đang tải dữ liệu...</div>
+    );
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-gray-500 hover:text-[#49BBBD] mb-6 transition-colors"
+        >
+          <ArrowLeft size={20} /> Quay lại danh sách
+        </button>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          {/* Header */}
+          <div className="bg-[#49BBBD] p-8 text-white">
+            <h1 className="text-3xl font-bold mb-2">{quizName}</h1>
+            <div className="flex gap-6 opacity-90 text-sm">
+              <span className="flex items-center gap-2">
+                <History size={16} /> {attempts.length} lần thử
+              </span>
+              <span className="flex items-center gap-2">
+                <Award size={16} /> Điểm cao nhất: {bestScore}
+              </span>
+            </div>
+          </div>
+
+          <div className="p-8">
+            <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 border-b border-gray-100 pb-8">
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">
+                  Lịch sử làm bài
+                </h2>
+                <p className="text-gray-500 text-sm mt-1">
+                  ID Sinh viên: {localStorage.getItem('studentId')}
+                </p>
+              </div>
+
+              <button
+                onClick={handleStartQuiz}
+                disabled={starting}
+                className="flex items-center gap-3 bg-[#49BBBD] text-white px-8 py-3 rounded-full font-bold text-lg hover:bg-[#3aa8aa] transition-all shadow-lg shadow-teal-100 active:scale-95 disabled:opacity-70"
+              >
+                {starting ? (
+                  'Đang khởi tạo...'
+                ) : (
+                  <>
+                    <PlayCircle size={24} /> Bắt đầu làm bài
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Bảng Lịch sử */}
+            {attempts.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="text-gray-400 text-sm border-b border-gray-100">
+                      <th className="py-3 font-medium">Lần thử</th>
+                      <th className="py-3 font-medium">Trạng thái</th>
+                      <th className="py-3 font-medium">Ngày bắt đầu</th>
+                      <th className="py-3 font-medium text-right">Điểm số</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-gray-600">
+                    {attempts.map(att => (
+                      <tr
+                        key={att.atid}
+                        className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="py-4 font-bold text-[#49BBBD]">
+                          #{att.attempt_number}
+                        </td>
+                        <td className="py-4">
+                          {att.status === 'completed' ||
+                          att.status === 'submitted' ? (
+                            <span className="flex items-center gap-1 text-green-600 text-sm font-medium bg-green-50 px-2 py-1 rounded w-fit">
+                              <CheckCircle size={14} /> Hoàn thành
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-orange-500 text-sm font-medium bg-orange-50 px-2 py-1 rounded w-fit">
+                              <Clock size={14} /> Đang làm
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-4 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Calendar size={14} className="text-gray-400" />
+                            {new Date(att.started_at).toLocaleString('vi-VN')}
+                          </div>
+                        </td>
+                        <td className="py-4 text-right">
+                          <span className="font-bold text-lg text-gray-800">
+                            {att.score ?? '--'}
+                            <span className="text-gray-400 text-sm font-normal">
+                              /{att.max_score}
+                            </span>
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm text-gray-300">
+                  <History size={32} />
+                </div>
+                <p className="text-gray-500 font-medium">
+                  Chưa có lịch sử làm bài.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
