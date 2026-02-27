@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import {
   Clock,
   ChevronLeft,
@@ -11,6 +10,9 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { attemptService } from '../services/attempt.service';
+import { quizService } from '../services/quiz.service';
+import type { Attempt, Question as QuestionType } from '../types';
 
 // --- INTERFACES ---
 interface Option {
@@ -18,11 +20,9 @@ interface Option {
   content: string; // Nội dung đáp án
 }
 
-interface Question {
-  ques_id: string;
-  content: string;
-  options_json: string; // Chuỗi JSON từ DB: '{"A": "...", "B": "..."}'
-  parsedOptions?: Option[]; // Mảng sau khi xử lý để hiển thị
+// Extend Question type để thêm parsedOptions
+interface Question extends QuestionType {
+  parsedOptions?: Option[];
 }
 
 interface QuizInfo {
@@ -30,12 +30,7 @@ interface QuizInfo {
   timeLimit: number; // Phút
 }
 
-interface AttemptInfo {
-  atid: string;
-  started_at: string;
-  quiz_id: string;
-  status: string;
-}
+// AttemptInfo đã có trong types, không cần khai báo lại
 
 export default function TakeQuiz() {
   const { atid } = useParams<{ atid: string }>();
@@ -54,28 +49,21 @@ export default function TakeQuiz() {
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // --- 1. KHỞI TẠO DỮ LIỆU ---
   useEffect(() => {
     const initQuiz = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const headers = { Authorization: `Bearer ${token}` };
-
         if (!atid) return;
 
         // B1: Lấy thông tin Attempt
-        const attemptRes = await axios.get(
-          `http://localhost:3000/attempts/${atid}`,
-          { headers }
-        );
-        const attemptData: AttemptInfo = attemptRes.data;
+        const attemptData: Attempt = await attemptService.getAttemptById(atid);
 
         // Check trạng thái
         if (
-          attemptData.status === 'completed' ||
-          attemptData.status === 'submitted'
+          attemptData.status === 'submitted' ||
+          attemptData.status === 'graded'
         ) {
           toast.info('Bài thi này đã được nộp.');
           navigate(`/quiz-result/${atid}`, { replace: true });
@@ -83,11 +71,7 @@ export default function TakeQuiz() {
         }
 
         // B2: Lấy thông tin Quiz
-        const quizRes = await axios.get(
-          `http://localhost:3000/quizzes/${attemptData.quiz_id}`,
-          { headers }
-        );
-        const quizData = quizRes.data;
+        const quizData = await quizService.getQuizById(attemptData.quiz_id);
 
         // Parse timeLimit
         let limit = 0;
@@ -102,35 +86,39 @@ export default function TakeQuiz() {
         }
         setQuizInfo({ name: quizData.name, timeLimit: limit });
 
-        // B3: Lấy danh sách câu hỏi (QUAN TRỌNG NHẤT)
-        const questionsRes = await axios.get(
-          `http://localhost:3000/questions/quiz/${attemptData.quiz_id}`,
-          { headers }
-        );
+        // B3: Lấy danh sách câu hỏi từ Quiz object
+        const rawQuestions: Question[] = (quizData.questions || []) as Question[];
 
-        const rawQuestions: Question[] = questionsRes.data;
+        // 👇 LOGIC XỬ LÝ OPTIONS_JSON
+        const processedQuestions = rawQuestions
+          .filter(q => q.ques_id) // Lọc bỏ questions không có ID
+          .map(q => {
+            let opts: Option[] = [];
+            try {
+              // Xử lý options_json - có thể đã là object hoặc string
+              let parsedObj;
+              if (typeof q.options_json === 'string') {
+                parsedObj = JSON.parse(q.options_json);
+              } else if (typeof q.options_json === 'object') {
+                parsedObj = q.options_json; // Đã là object rồi
+              } else {
+                parsedObj = {};
+              }
 
-        // 👇 LOGIC XỬ LÝ OPTIONS_JSON KHỚP VỚI DATABASE CỦA BẠN
-        const processedQuestions = rawQuestions.map(q => {
-          let opts: Option[] = [];
-          try {
-            // DB trả về: {"A": "var x", "B": "const x"}
-            const parsedObj = JSON.parse(q.options_json);
+              // Chuyển Object thành Array: [{id: "A", content: "..."}, ...]
+              opts = Object.entries(parsedObj).map(([key, value]) => ({
+                id: key,
+                content: String(value),
+              }));
 
-            // Chuyển Object thành Array: [{id: "A", content: "var x"}, ...]
-            opts = Object.entries(parsedObj).map(([key, value]) => ({
-              id: key, // Key là A, B, C...
-              content: String(value), // Value là nội dung
-            }));
-
-            // Sắp xếp lại cho chắc chắn A, B, C, D theo thứ tự
-            opts.sort((a, b) => a.id.localeCompare(b.id));
-          } catch (error) {
-            console.error(`Lỗi parse options câu ${q.ques_id}`, error);
-            opts = [];
-          }
-          return { ...q, parsedOptions: opts };
-        });
+              // Sắp xếp theo A, B, C, D
+              opts.sort((a, b) => a.id.localeCompare(b.id));
+            } catch (error) {
+              console.error(`Lỗi parse options câu ${q.ques_id}`, error);
+              opts = [];
+            }
+            return { ...q, parsedOptions: opts };
+          });
 
         setQuestions(processedQuestions);
 
@@ -204,7 +192,6 @@ export default function TakeQuiz() {
     }
 
     setIsSubmitting(true);
-    const token = localStorage.getItem('token');
 
     try {
       // Format payload: { "question_id": "...", "answer_json": "{\"selected\":\"A\"}" }
@@ -214,15 +201,13 @@ export default function TakeQuiz() {
       }));
 
       // Gọi API nộp bài
-      const res = await axios.put(
-        `http://localhost:3000/attempts/${atid}/submit`,
-        { answers: payloadAnswers },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await attemptService.submitAttempt(atid!, {
+        answers: payloadAnswers,
+      });
 
       toast.success('Nộp bài thành công!');
       // Chuyển sang trang kết quả
-      navigate(`/quiz-result/${atid}`, { state: { result: res.data } });
+      navigate(`/quiz-result/${atid}`, { state: { result: res } });
     } catch (error: any) {
       console.error('Submit error:', error);
       toast.error('Nộp bài thất bại.');
@@ -236,6 +221,15 @@ export default function TakeQuiz() {
     );
 
   const currentQuestion = questions[currentQIndex];
+  
+  // Guard: Đảm bảo câu hỏi hiện tại có ID
+  if (currentQuestion && !currentQuestion.ques_id) {
+    return (
+      <div className="p-10 text-center text-red-500">
+        Lỗi: Câu hỏi không có ID hợp lệ.
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
@@ -271,14 +265,12 @@ export default function TakeQuiz() {
 
               <div className="space-y-3">
                 {currentQuestion.parsedOptions?.map(opt => {
-                  const isSelected =
-                    answers[currentQuestion.ques_id] === opt.id;
+                  const questionId = currentQuestion.ques_id!; // Safe after guard check
+                  const isSelected = answers[questionId] === opt.id;
                   return (
                     <div
                       key={opt.id}
-                      onClick={() =>
-                        handleSelectOption(currentQuestion.ques_id, opt.id)
-                      }
+                      onClick={() => handleSelectOption(questionId, opt.id)}
                       className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${
                         isSelected
                           ? 'border-[#49BBBD] bg-teal-50'
@@ -355,7 +347,7 @@ export default function TakeQuiz() {
             </div>
             <div className="grid grid-cols-5 gap-2 max-h-[60vh] overflow-y-auto">
               {questions.map((q, idx) => {
-                const isDone = !!answers[q.ques_id];
+                const isDone = q.ques_id ? !!answers[q.ques_id] : false;
                 const isNow = idx === currentQIndex;
                 return (
                   <button

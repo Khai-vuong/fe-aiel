@@ -81,3 +81,64 @@ export interface QuizUpdateRequest {
   available_from?: string | null;
   available_until?: string | null;
 }
+
+// ====== ATTEMPT TYPES ======
+
+export interface Answer {
+  answer_json: string;
+  is_correct?: boolean;
+  points_awarded?: number;
+  question?: {
+    ques_id: string;
+    content: string;
+    options_json?: string;
+    answer_key_json: string;
+    points: number;
+  };
+}
+
+export interface Attempt {
+  atid: string;
+  quiz_id: string;
+  student_id: string;
+  status: 'in_progress' | 'submitted' | 'graded';
+  attempt_number: number;
+  score?: number | null;
+  max_score?: number;
+  percentage?: number | null;
+  started_at: string;
+  submitted_at?: string | null;
+  completed_at?: string | null;
+  updated_at?: string;
+  quiz?: {
+    qid: string;
+    name: string;
+  };
+  student?: {
+    sid: string;
+    name: string;
+  };
+  answers?: Answer[];
+}
+
+// ====== ATTEMPT REQUEST TYPES ======
+
+export interface AttemptCreateRequest {
+  quiz_id: string;
+  student_id: string;
+}
+
+export interface AttemptAnswerRequest {
+  question_id: string;
+  answer_json: string;
+}
+
+export interface AttemptSubmitRequest {
+  answers: AttemptAnswerRequest[];
+}
+
+export interface AttemptUpdateRequest {
+  score?: number;
+  status?: 'in_progress' | 'submitted' | 'graded';
+  percentage?: number;
+}

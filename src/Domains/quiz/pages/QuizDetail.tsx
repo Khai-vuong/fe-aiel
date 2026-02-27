@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
 import {
   ArrowLeft,
   History,
@@ -14,17 +13,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { quizService } from '../services/quiz.service';
-import type { Quiz } from '../types';
-
-interface Attempt {
-  atid: string;
-  attempt_number: number;
-  score: number;
-  max_score: number;
-  started_at: string;
-  completed_at?: string;
-  status: string;
-}
+import { attemptService } from '../services';
+import type { Quiz, Attempt } from '../types';
 
 export default function QuizDetail() {
   const { qid } = useParams<{ qid: string }>();
@@ -51,37 +41,25 @@ export default function QuizDetail() {
     };
 
     if (qid) fetchQuizInfo();
-  }, [qid]);
+  }, []);
 
   // --- PHẦN 1: GỌI API LẤY LỊCH SỬ ---
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const studentId = localStorage.getItem('studentId');
+        const studentId = localStorage.getItem('roleId');
 
         if (!studentId || !qid) return;
 
-        const url = `http://localhost:3000/attempts/quiz/${qid}/student/${studentId}`;
-        const response = await axios.get(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const data = await attemptService.getAttemptsByQuizAndStudent(qid, studentId);
 
-        // Xử lý dữ liệu trả về (có thể bọc trong data hoặc trả về mảng luôn)
-        let dataToSet = [];
-        if (Array.isArray(response.data)) {
-          dataToSet = response.data;
-        } else if (response.data && Array.isArray(response.data.data)) {
-          dataToSet = response.data.data;
-        }
-
-        setAttempts(
-          dataToSet.sort(
-            (a: Attempt, b: Attempt) =>
-              new Date(b.started_at).getTime() -
-              new Date(a.started_at).getTime()
-          )
+        // Service trả về mảng Attempt trực tiếp
+        const sortedAttempts = data.sort(
+          (a: Attempt, b: Attempt) =>
+            new Date(b.started_at).getTime() -
+            new Date(a.started_at).getTime()
         );
+        setAttempts(sortedAttempts);
       } catch (error) {
         console.error('Lỗi tải lịch sử:', error);
       } finally {
@@ -90,11 +68,10 @@ export default function QuizDetail() {
     };
 
     fetchHistory();
-  }, [qid]);
+  }, []);
 
   // --- PHẦN 2: XỬ LÝ LÀM BÀI (GỌI API THẬT) ---
   const handleStartQuiz = async () => {
-    const token = localStorage.getItem('token');
     const studentId = localStorage.getItem('roleId');
 
     if (!studentId) {
@@ -102,10 +79,13 @@ export default function QuizDetail() {
       return;
     }
 
+    if (!qid) {
+      toast.error('Lỗi: Không tìm thấy ID bài thi.');
+      return;
+    }
+
     setStarting(true);
     try {
-      console.log('🚀 Đang gọi API tạo bài thi...');
-
       // Payload gửi lên backend
       const payload = {
         quiz_id: qid,
@@ -113,16 +93,10 @@ export default function QuizDetail() {
       };
 
       // Gọi API thật
-      const response = await axios.post(
-        'http://localhost:3000/attempts',
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      console.log('✅ Kết quả tạo bài thi:', response.data);
+      const response = await attemptService.createAttempt(payload);
 
       // Lấy ID bài thi từ response
-      const newAttemptId = response.data.atid || response.data.id;
+      const newAttemptId = response.atid;
 
       if (newAttemptId) {
         // Chuyển sang trang làm bài với ID thật
@@ -142,7 +116,10 @@ export default function QuizDetail() {
 
   // Tính điểm cao nhất
   const bestScore = attempts.reduce(
-    (max, att) => (att.score > max ? att.score : max),
+    (max, att) => {
+      const score = att.score ?? 0;
+      return score > max ? score : max;
+    },
     0
   );
 
@@ -242,7 +219,7 @@ export default function QuizDetail() {
                       <th className="py-3 font-medium">Lần thử</th>
                       <th className="py-3 font-medium">Trạng thái</th>
                       <th className="py-3 font-medium">Ngày bắt đầu</th>
-                      <th className="py-3 font-medium text-right">Điểm số</th>
+                      <th className="py-3 font-medium">Điểm số</th>
                     </tr>
                   </thead>
                   <tbody className="text-gray-600">
@@ -255,8 +232,8 @@ export default function QuizDetail() {
                           #{att.attempt_number}
                         </td>
                         <td className="py-4">
-                          {att.status === 'completed' ||
-                            att.status === 'submitted' ? (
+                          {att.status === 'submitted' ||
+                            att.status === 'graded' ? (
                             <span className="flex items-center gap-1 text-green-600 text-sm font-medium bg-green-50 px-2 py-1 rounded w-fit">
                               <CheckCircle size={14} /> Hoàn thành
                             </span>
@@ -272,12 +249,9 @@ export default function QuizDetail() {
                             {new Date(att.started_at).toLocaleString('vi-VN')}
                           </div>
                         </td>
-                        <td className="py-4 text-right">
+                        <td className="py-4">
                           <span className="font-bold text-lg text-gray-800">
-                            {att.score ?? '--'}
-                            <span className="text-gray-400 text-sm font-normal">
-                              /{att.max_score}
-                            </span>
+                            {att.percentage != null ? `${att.percentage.toFixed(1)}%` : '--'}
                           </span>
                         </td>
                       </tr>

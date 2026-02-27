@@ -18,6 +18,7 @@ import TakeQuiz from './Domains/quiz/pages/TakeQuiz';
 import QuizList from './Domains/quiz/pages/QuizList';
 import QuizDetail from './Domains/quiz/pages/QuizDetail';
 import QuizCreate from './Domains/quiz/pages/QuizCreate';
+import QuizResult from './Domains/quiz/pages/QuizResult';
 // ❌ Đã xóa import QuizEdit để fix lỗi trắng màn hình
 // import QuizEdit from './Domains/quiz/pages/QuizEdit';
 
@@ -74,7 +75,7 @@ const router = createBrowserRouter([
       { path: 'take-quiz/:atid', element: <TakeQuiz /> },
 
       // 6. Kết quả bài thi
-      { path: 'quiz-result/:atid', element: <QuizDetail /> },
+      { path: 'quiz-result/:atid', element: <QuizResult /> },
 
       // --- Other ---
       { path: 'instructor/dashboard', element: <InstructorDashboard /> },
