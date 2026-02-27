@@ -2,7 +2,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import Layout from './Layout';
 import React from 'react';
 import Homepage from '@/pages/Homepage';
-import AdminCourses from '@/Domains/course/pages/AdminCourses';
+import AdminSystem from '@/Domains/course/pages/AdminSystem';
 
 export const router = createBrowserRouter([
   {
@@ -15,7 +15,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '/admin/dashboard',
-        element: React.createElement(AdminCourses),
+        element: React.createElement(AdminSystem),
       },
     ],
   },

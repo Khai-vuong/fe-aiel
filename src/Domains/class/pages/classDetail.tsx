@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios'; // ✅ Dùng axios
 import { getClassById } from '../services/classServices';
 import type { Class } from '../types';
 import QuizList from '../../quiz/pages/QuizList';
@@ -13,10 +12,7 @@ import {
   FileCheck,
   ChevronDown,
   ChevronUp,
-  Activity, // Icon cho Log
-  List,
-  RefreshCw,
-  Database, // Icon cho Resource ID
+  Activity,
 } from 'lucide-react';
 
 export default function ClassDetail() {
@@ -31,11 +27,6 @@ export default function ClassDetail() {
   // ===== UI STATE =====
   const [activeTab, setActiveTab] = useState<'files' | 'quizzes'>('files');
   const [isCourseInfoOpen, setIsCourseInfoOpen] = useState(true);
-
-  // ===== LOG STATE =====
-  const [showLogs, setShowLogs] = useState(false);
-  const [logs, setLogs] = useState<any[]>([]);
-  const [loadingLogs, setLoadingLogs] = useState(false);
 
   const userRole = localStorage.getItem('userRole');
 
@@ -61,40 +52,6 @@ export default function ClassDetail() {
     };
     fetchClassDetails();
   }, [clid]);
-
-  // ===== FETCH LOGS (Đã sửa dùng Axios) =====
-  const fetchLogs = async () => {
-    if (!clid) return;
-
-    setLoadingLogs(true);
-    try {
-      const token = localStorage.getItem('token');
-      // Gọi API lấy log (limit=20 để xem nhiều hơn)
-      const res = await axios.get(
-        `http://localhost:3000/logs/class/${clid}?page=1&limit=20`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      // Xử lý dữ liệu trả về
-      const logData = Array.isArray(res.data) ? res.data : res.data.data || [];
-      setLogs(logData);
-    } catch (err) {
-      console.error('Failed to fetch logs', err);
-    } finally {
-      setLoadingLogs(false);
-    }
-  };
-
-  // Handler toggle
-  const handleToggleLogs = () => {
-    const newState = !showLogs;
-    setShowLogs(newState);
-    if (newState && logs.length === 0) {
-      fetchLogs();
-    }
-  };
 
   if (loading) {
     return (
@@ -138,17 +95,13 @@ export default function ClassDetail() {
 
             {userRole === 'Lecturer' && (
               <div className="flex gap-3">
-                {/* 1. Nút View Log */}
+                {/* 1. Nút View Log - Navigate to LogPage */}
                 <button
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 border ${
-                    showLogs
-                      ? 'bg-gray-100 text-[#49BBBD] border-[#49BBBD]'
-                      : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                  }`}
-                  onClick={handleToggleLogs}
+                  className="px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 border bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                  onClick={() => navigate(`/class/${classData.clid}/logs`)}
                 >
                   <Activity size={18} />
-                  {showLogs ? 'Hide Logs' : 'View Logs'}
+                  View Logs
                 </button>
 
                 {/* 2. Nút Class Monitor */}
@@ -243,127 +196,15 @@ export default function ClassDetail() {
           )}
         </div>
 
-        {/* ===== LOG SECTION (HIỂN THỊ ĐẦY ĐỦ THÔNG TIN) ===== */}
-        {showLogs && (
-          <div className="bg-white rounded-lg shadow-md border border-teal-100 p-6 mb-6 animate-fadeIn">
-            <div className="flex justify-between items-center mb-4 pb-2 border-b">
-              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <List className="text-[#49BBBD]" /> Nhật ký hoạt động
-              </h3>
-              <button
-                onClick={fetchLogs}
-                disabled={loadingLogs}
-                className="text-sm flex items-center gap-1 text-[#49BBBD] hover:text-teal-700 font-medium transition-colors"
-              >
-                <RefreshCw
-                  size={14}
-                  className={loadingLogs ? 'animate-spin' : ''}
-                />{' '}
-                Làm mới
-              </button>
-            </div>
-
-            {loadingLogs ? (
-              <div className="text-center py-8 text-gray-500">
-                Đang tải nhật ký...
-              </div>
-            ) : logs.length > 0 ? (
-              <div className="overflow-x-auto border rounded-lg">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-gray-50 text-gray-600 font-medium border-b">
-                    <tr>
-                      <th className="p-3">Resource ID</th>
-                      <th className="p-3">User ID / Name</th>
-                      <th className="p-3">Action</th>
-                      <th className="p-3">Details</th>
-                      <th className="p-3">Created At</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {logs.map(log => (
-                      <tr key={log.lid || log.id} className="hover:bg-gray-50">
-                        {/* 1. Resource ID */}
-                        <td className="p-3 font-mono text-xs text-blue-600">
-                          <div className="flex items-center gap-1">
-                            <Database size={12} className="text-gray-400" />
-                            {log.entity_id || log.resource_id || '-'}
-                          </div>
-                          <span className="text-[10px] text-gray-400">
-                            {log.entity_type || 'Unknown'}
-                          </span>
-                        </td>
-
-                        {/* 2. User ID / Name */}
-                        <td className="p-3">
-                          <div className="font-medium text-gray-800">
-                            {log.user?.name || 'Unknown'}
-                          </div>
-                          <div className="text-xs text-gray-400 font-mono">
-                            {log.user_id || log.userId}
-                          </div>
-                        </td>
-
-                        {/* 3. Action */}
-                        <td className="p-3">
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-bold border ${
-                              (log.action || '')
-                                .toLowerCase()
-                                .includes('create')
-                                ? 'bg-green-50 text-green-700 border-green-200'
-                                : (log.action || '')
-                                      .toLowerCase()
-                                      .includes('update')
-                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                  : (log.action || '')
-                                        .toLowerCase()
-                                        .includes('delete')
-                                    ? 'bg-red-50 text-red-700 border-red-200'
-                                    : 'bg-gray-100 text-gray-600 border-gray-200'
-                            }`}
-                          >
-                            {log.action}
-                          </span>
-                        </td>
-
-                        {/* 4. Details */}
-                        <td
-                          className="p-3 text-gray-600 max-w-xs truncate"
-                          title={log.details}
-                        >
-                          {log.details || '-'}
-                        </td>
-
-                        {/* 5. Created At */}
-                        <td className="p-3 text-gray-500 whitespace-nowrap">
-                          {new Date(
-                            log.created_at || log.createdAt
-                          ).toLocaleString('vi-VN')}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-lg border border-dashed">
-                <Activity className="mx-auto mb-2 opacity-50" size={32} />
-                <p>Không tìm thấy hoạt động nào.</p>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* ===== TABS ===== */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="flex border-b">
             <button
               onClick={() => setActiveTab('files')}
-              className={`flex-1 px-6 py-4 font-medium transition-colors ${
-                activeTab === 'files'
-                  ? 'bg-[#49BBBD] text-white border-b-2 border-[#49BBBD]'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
+              className={`flex-1 px-6 py-4 font-medium transition-colors ${activeTab === 'files'
+                ? 'bg-[#49BBBD] text-white border-b-2 border-[#49BBBD]'
+                : 'text-gray-600 hover:bg-gray-50'
+                }`}
             >
               <div className="flex items-center justify-center gap-2">
                 <FileText className="w-5 h-5" />
@@ -373,11 +214,10 @@ export default function ClassDetail() {
 
             <button
               onClick={() => setActiveTab('quizzes')}
-              className={`flex-1 px-6 py-4 font-medium transition-colors ${
-                activeTab === 'quizzes'
-                  ? 'bg-[#49BBBD] text-white border-b-2 border-[#49BBBD]'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
+              className={`flex-1 px-6 py-4 font-medium transition-colors ${activeTab === 'quizzes'
+                ? 'bg-[#49BBBD] text-white border-b-2 border-[#49BBBD]'
+                : 'text-gray-600 hover:bg-gray-50'
+                }`}
             >
               <div className="flex items-center justify-center gap-2">
                 <FileCheck className="w-5 h-5" />
@@ -438,7 +278,7 @@ export default function ClassDetail() {
             {activeTab === 'quizzes' && (
               <div>
                 <QuizList
-                  onBack={() => setActiveTab('files')}
+                // onBack={() => setActiveTab('files')}
                 />
               </div>
             )}

@@ -26,7 +26,10 @@ import ClassesCatalog from './Domains/class/pages/classesCatalog';
 import ClassDetail from './Domains/class/pages/ClassDetail';
 import EditClass from './Domains/class/pages/EditClass';
 import FileAdd from './Domains/quiz/pages/FileAdd';
-import AdminCourses from './Domains/course/pages/AdminCourses';
+import AdminSystem from './Domains/course/pages/AdminSystem';
+
+// --- Logs Imports ---
+import LogPage from './Domains/logs/pages/LogPage';
 
 const router = createBrowserRouter([
   {
@@ -40,7 +43,7 @@ const router = createBrowserRouter([
       // --- Courses ---
       { path: 'courses/register', element: <CourseRegister /> },
       { path: 'courses/new', element: <NewCourseRegister /> },
-      { path: 'courses/catalog', element: <AdminCourses /> },
+      { path: 'courses/catalog', element: <AdminSystem /> },
 
       // --- User ---
       { path: 'student/profile', element: <UserProfile /> },
@@ -51,6 +54,7 @@ const router = createBrowserRouter([
       { path: 'class/:clid/edit', element: <EditClass /> },
       { path: 'class/:clid/monitor', element: <InstructorDashboard /> },
       { path: 'class/:clid/fileAdd', element: <FileAdd /> },
+      { path: 'class/:clid/logs', element: <LogPage /> },
 
       // --- QUIZ ROUTES ---
 
