@@ -138,11 +138,10 @@ export default function NotificationPage() {
             notifications.map(notif => (
               <div
                 key={notif.nid}
-                className={`group relative p-5 rounded-xl border transition-all duration-200 ${
-                  notif.is_read
-                    ? 'bg-white border-gray-100'
-                    : 'bg-white border-l-4 border-l-[#49BBBD] shadow-md'
-                }`}
+                className={`group relative p-5 rounded-xl border transition-all duration-200 ${notif.is_read
+                  ? 'bg-white border-gray-100'
+                  : 'bg-white border-l-4 border-l-[#49BBBD] shadow-md'
+                  }`}
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -169,7 +168,7 @@ export default function NotificationPage() {
 
                   {/* Actions */}
                   <div className="flex flex-col gap-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {!notif.is_read && (
+                    {/* {!notif.is_read && (
                       <button
                         onClick={() => handleMarkAsRead(notif.nid)}
                         title="Đánh dấu đã đọc"
@@ -177,7 +176,7 @@ export default function NotificationPage() {
                       >
                         <FaEnvelopeOpenText />
                       </button>
-                    )}
+                    )} */}
                     <button
                       onClick={() => handleDelete(notif.nid)}
                       title="Xóa"

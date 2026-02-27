@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getUserProfile, updateUserProfile } from '../services/usersService';
+import usersService from '../services/users.service';
 import { toast } from "react-toastify";
 
 export default function UserProfile() {
@@ -17,7 +17,7 @@ export default function UserProfile() {
         }
 
         try {
-            const data = await getUserProfile(token);
+            const data = await usersService.getMyProfile();
             console.log('PROFILE DATA:', data);
 
             setUser(data);
@@ -140,7 +140,7 @@ function EditProfileModal({
                 personalInfoData.dob = user.admin.personal_info.dob;
             }
 
-            await updateUserProfile(user.uid, token, {
+            await usersService.updateUser(user.uid, {
                 status: 'Active',
                 ...(roleType === 'Student' && { major }),
                 personal_info_json: JSON.stringify(personalInfoData),

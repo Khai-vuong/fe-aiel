@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { registerUser } from '../services/usersService';
-import type { RegisterRequestData } from '../types';
+import usersService from '../services/users.service';
+import type { RegisterDto } from '../types';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -163,17 +163,17 @@ export default function Register() {
       // Capitalize role to match API expectation
       const capitalizedRole = role === 'student' ? 'Student' : 'Lecturer';
 
-      const registerData: RegisterRequestData = {
+      const registerData: RegisterDto = {
         username: username.trim(),
-        email: email.trim(),
         hashed_password: password,
-        role: capitalizedRole as 'Student' | 'Lecturer',
+        email: email.trim(),
+        role: capitalizedRole as 'Student' | 'Lecturer' | 'Admin',
         name: name.trim(),
         personal_info_json: JSON.stringify(personalInfo),
         ...(role === 'student' && { major: major.trim() }),
       };
 
-      const response = await registerUser(registerData);
+      const response = await usersService.register(registerData);
 
       // Registration successful
       toast.success(`Registration successful! Welcome ${response.username}`);
@@ -184,7 +184,7 @@ export default function Register() {
       }, 1500);
     } catch (error: any) {
       console.error('Registration error:', error);
-      toast.error(error.message || 'Registration failed. Please try again.');
+      toast.error(error.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

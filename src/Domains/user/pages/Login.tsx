@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import usersService from '../services/users.service';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -17,55 +18,37 @@ export default function Login() {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/users/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: username,
-          hashed_password: password,
-        }),
+      const data = await usersService.login({
+        username: username,
+        hashed_password: password,
       });
 
-      if (response.ok) {
-        const data = await response.json();
+      // 1. Lưu các thông tin cơ bản
+      localStorage.setItem('token', data.userToken);
+      localStorage.setItem('username', username);
+      localStorage.setItem('userRole', data.role);
+      localStorage.setItem('roleId', data.roleId);
 
-        // 1. Lưu các thông tin cơ bản (Code cũ)
-        localStorage.setItem('token', data.userToken);
-        localStorage.setItem('username', username);
-        localStorage.setItem('userRole', data.role);
-
-        // ---------------------------------------------------------
-        // 2. 👇 [QUAN TRỌNG] Logic mới thêm để Fix lỗi Quiz History
-        // ---------------------------------------------------------
-        // Kiểm tra các trường có thể chứa ID từ Backend
-        const serverId =
-          data.id ||
-          data.userId ||
-          data.studentId ||
-          (data.user && data.user.id);
+      // 2. Lấy thông tin profile để có uid
+      try {
+        const profile = await usersService.getMyProfile();
+        const serverId = profile.uid;
 
         if (serverId) {
           localStorage.setItem('studentId', serverId);
           console.log('✅ Đã lưu studentId:', serverId);
-        } else {
-          console.warn(
-            '⚠️ Backend không trả về ID. Tính năng lịch sử có thể không hoạt động.'
-          );
-          // Fallback: Nếu không có ID, tạm lưu username làm ID (nếu hệ thống cho phép)
-          // localStorage.setItem('studentId', username);
         }
-        // ---------------------------------------------------------
-
-        toast.success('Đăng nhập thành công!');
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 1000);
-      } else {
-        toast.error('Sai thông tin đăng nhập');
+      } catch (profileErr) {
+        console.warn('⚠️ Không thể lấy profile sau login:', profileErr);
       }
-    } catch (err) {
+
+      toast.success('Đăng nhập thành công!');
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
+    } catch (err: any) {
       console.error('Lỗi login:', err);
-      toast.error('Không thể kết nối server!');
+      toast.error(err.response?.data?.message || 'Sai thông tin đăng nhập!');
     }
   };
 

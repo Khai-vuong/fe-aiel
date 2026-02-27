@@ -438,7 +438,6 @@ export default function ClassDetail() {
             {activeTab === 'quizzes' && (
               <div>
                 <QuizList
-                  clid={classData.clid}
                   onBack={() => setActiveTab('files')}
                 />
               </div>

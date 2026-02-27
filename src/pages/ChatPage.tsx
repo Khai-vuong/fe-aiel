@@ -15,8 +15,12 @@ import {
   FaTimes,
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { toast } from 'react-toastify'; // Khuyến nghị dùng toast để thông báo kết quả
+import { toast } from 'react-toastify';
+import { notificationService } from '../Domains/notifications/services';
+import type {
+  Notification,
+  CreateNotificationDto,
+} from '../Domains/notifications/types';
 
 // --- INTERFACES ---
 interface User {
@@ -32,15 +36,6 @@ interface Message {
   sender: 'me' | 'bot';
   text: string;
   time: string;
-}
-
-interface Notification {
-  nid: string;
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'success' | 'system';
-  is_read: boolean;
-  created_at: string;
 }
 
 // Mock users
@@ -103,7 +98,7 @@ export default function ChatPage() {
   const [formData, setFormData] = useState({
     title: '',
     message: '',
-    type: 'info',
+    type: 'general',
     recipient_uid: '', // ID người nhận (nhập tay hoặc chọn)
     related_type: '',
     related_id: '',
@@ -114,24 +109,20 @@ export default function ChatPage() {
   const fetchNotifications = async () => {
     setLoadingNoti(true);
     try {
-      const token = localStorage.getItem('token');
-      // Logic API Role
-      const endpoint =
+      // Sử dụng notificationService singleton instance
+      const data =
         userRole === 'Student'
-          ? 'http://localhost:3000/notifications/me'
-          : 'http://localhost:3000/notifications';
+          ? await notificationService.getMyNotifications()
+          : await notificationService.getAllNotifications();
 
-      const res = await axios.get(endpoint, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const sorted = res.data.sort(
-        (a: Notification, b: Notification) =>
+      const sorted = data.sort(
+        (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
       setNotifications(sorted);
     } catch (error) {
       console.error('Failed to fetch notifications', error);
+      toast.error('Không thể tải thông báo');
     } finally {
       setLoadingNoti(false);
     }
@@ -139,12 +130,8 @@ export default function ChatPage() {
 
   const markAsRead = async (nid: string) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.patch(
-        `http://localhost:3000/notifications/${nid}/mark-as-read`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      // Sử dụng notificationService
+      await notificationService.markNotificationAsRead(nid);
 
       setNotifications(prev =>
         prev.map(n => (n.nid === nid ? { ...n, is_read: true } : n))
@@ -157,6 +144,7 @@ export default function ChatPage() {
       }
     } catch (error) {
       console.error('Failed to mark notification as read', error);
+      toast.error('Không thể đánh dấu đã đọc');
     }
   };
 
@@ -164,37 +152,51 @@ export default function ChatPage() {
   const handleCreateNotification = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.message || !formData.recipient_uid) {
-      alert('Vui lòng điền đầy đủ thông tin bắt buộc!');
+      toast.error('Vui lòng điền đầy đủ thông tin bắt buộc!');
       return;
     }
 
     try {
-      const token = localStorage.getItem('token');
-      await axios.post('http://localhost:3000/notifications', formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // Chuẩn bị dữ liệu theo đúng type
+      const notificationData: CreateNotificationDto = {
+        title: formData.title,
+        message: formData.message,
+        recipient_uid: formData.recipient_uid,
+        type: formData.type as any,
+        related_type: formData.related_type ? formData.related_type as any : undefined,
+        related_id: formData.related_id || undefined,
+      };
 
-      alert('Tạo thông báo thành công!'); // Có thể thay bằng toast.success
+      // Sử dụng notificationService
+      await notificationService.createNotification(notificationData);
+
+      toast.success('Tạo thông báo thành công!');
       setShowModal(false);
       setFormData({
         title: '',
         message: '',
-        type: 'info',
+        type: 'general',
         recipient_uid: '',
         related_type: '',
         related_id: '',
       });
 
-      // Refresh danh sách nếu là Admin (để thấy log) hoặc logic khác
+      // Refresh danh sách
       fetchNotifications();
     } catch (error) {
       console.error('Create notification failed', error);
-      alert('Lỗi khi tạo thông báo.');
+      toast.error('Lỗi khi tạo thông báo.');
     }
   };
 
-  const handleSelectNotification = (notif: Notification) => {
+  // 👇 Tự động đánh dấu đã đọc khi click vào notification
+  const handleSelectNotification = async (notif: Notification) => {
     setSelectedNotification(notif);
+
+    // Nếu chưa đọc, tự động đánh dấu đã đọc
+    if (!notif.is_read) {
+      await markAsRead(notif.nid);
+    }
   };
 
   useEffect(() => {
@@ -223,14 +225,17 @@ export default function ChatPage() {
 
   const getNotiIcon = (type: string, size: number = 16) => {
     switch (type) {
-      case 'warning':
-        return (
-          <FaExclamationTriangle size={size} className="text-orange-500" />
-        );
-      case 'success':
+      case 'quiz_posted':
+        return <FaInfoCircle size={size} className="text-blue-500" />;
+      case 'grade_released':
         return <FaCheckCircle size={size} className="text-green-500" />;
-      case 'system':
-        return <FaBell size={size} className="text-blue-500" />;
+      case 'enrollment_status':
+        return <FaBell size={size} className="text-purple-500" />;
+      case 'deadline_reminder':
+        return <FaExclamationTriangle size={size} className="text-orange-500" />;
+      case 'assignment_submitted':
+        return <FaCheckCircle size={size} className="text-teal-500" />;
+      case 'general':
       default:
         return <FaInfoCircle size={size} className="text-gray-500" />;
     }
@@ -268,21 +273,19 @@ export default function ChatPage() {
           <div className="flex bg-gray-100 p-1 rounded-xl mt-4">
             <button
               onClick={() => setActiveTab('chat')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'chat'
-                  ? 'bg-white text-[#49BBBD] shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'chat'
+                ? 'bg-white text-[#49BBBD] shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
             >
               <FaCommentDots /> Tin nhắn
             </button>
             <button
               onClick={() => setActiveTab('notification')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'notification'
-                  ? 'bg-white text-[#49BBBD] shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'notification'
+                ? 'bg-white text-[#49BBBD] shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
             >
               <FaBell /> Thông báo
             </button>
@@ -461,13 +464,13 @@ export default function ChatPage() {
                       <span className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1 rounded-lg border border-green-200 font-semibold text-sm">
                         <FaEnvelopeOpenText /> Đã đọc
                       </span>
-                    ) : (
-                      <button
-                        onClick={() => markAsRead(selectedNotification.nid)}
-                        className="flex items-center gap-2 text-white bg-[#49BBBD] hover:bg-[#3aa4a6] px-4 py-1.5 rounded-lg transition-all shadow-sm active:scale-95 text-sm font-medium"
-                      >
-                        <FaEnvelope /> Đánh dấu đã đọc
-                      </button>
+                    ) : (<></>
+                      // <button
+                      //   onClick={() => markAsRead(selectedNotification.nid)}
+                      //   className="flex items-center gap-2 text-white bg-[#49BBBD] hover:bg-[#3aa4a6] px-4 py-1.5 rounded-lg transition-all shadow-sm active:scale-95 text-sm font-medium"
+                      // >
+                      //   <FaEnvelope /> Đánh dấu đã đọc
+                      // </button>
                     )}
                   </div>
                 </div>
@@ -553,10 +556,12 @@ export default function ChatPage() {
                       setFormData({ ...formData, type: e.target.value })
                     }
                   >
-                    <option value="info">Info (Thông tin)</option>
-                    <option value="warning">Warning (Cảnh báo)</option>
-                    <option value="success">Success (Thành công)</option>
-                    <option value="system">System (Hệ thống)</option>
+                    <option value="general">General (Chung)</option>
+                    <option value="quiz_posted">Quiz Posted (Đề thi mới)</option>
+                    <option value="grade_released">Grade Released (Công bố điểm)</option>
+                    <option value="enrollment_status">Enrollment Status (Trạng thái đăng ký)</option>
+                    <option value="deadline_reminder">Deadline Reminder (Nhắc hạn)</option>
+                    <option value="assignment_submitted">Assignment Submitted (Nộp bài)</option>
                   </select>
                 </div>
                 <div>
