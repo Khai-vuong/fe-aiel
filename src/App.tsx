@@ -23,7 +23,7 @@ import QuizCreate from './Domains/quiz/pages/QuizCreate';
 
 // --- Class Imports ---
 import ClassesCatalog from './Domains/class/pages/classesCatalog';
-import ClassDetail from './Domains/class/pages/ClassDetail';
+import ClassDetail from './Domains/class/pages/classDetail';
 import EditClass from './Domains/class/pages/EditClass';
 import FileAdd from './Domains/quiz/pages/FileAdd';
 import AdminSystem from './Domains/course/pages/AdminSystem';

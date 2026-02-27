@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import {
   ArrowLeft,
   Save,
@@ -14,6 +13,8 @@ import {
   Target,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { quizService } from '../services/quiz.service';
+import type { QuizCreateRequest } from '../types';
 
 // --- INTERFACES ---
 interface OptionDraft {
@@ -37,7 +38,7 @@ export default function QuizCreate() {
   const [quizInfo, setQuizInfo] = useState({
     name: '',
     description: '',
-    status: 'draft',
+    status: 'published',
     available_from: '',
     available_until: '',
     timeLimit: 30, // Default 30 mins
@@ -152,22 +153,21 @@ export default function QuizCreate() {
     setSaving(true);
 
     try {
-      const token = localStorage.getItem('token');
       const creatorId =
-        localStorage.getItem('userId') || localStorage.getItem('lecturerId');
+        localStorage.getItem('roleId');
 
       if (!creatorId) {
         toast.error('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
         return;
       }
 
-      // 3. Chuẩn bị Payload
-      const payload = {
+      // 3. Chuẩn bị Payload theo API format
+      const payload: QuizCreateRequest = {
         name: quizInfo.name,
         description: quizInfo.description,
-        class_id: clid,
+        clid: clid!,
         creator_id: creatorId,
-        status: quizInfo.status,
+        status: quizInfo.status as 'draft' | 'published' | 'archived',
         available_from: quizInfo.available_from
           ? new Date(quizInfo.available_from).toISOString()
           : null,
@@ -175,30 +175,40 @@ export default function QuizCreate() {
           ? new Date(quizInfo.available_until).toISOString()
           : null,
 
-        // Settings JSON
+        // Settings JSON - stringify to string
         settings_json: JSON.stringify({
           timeLimit: Number(quizInfo.timeLimit),
           maxAttempts: Number(quizInfo.maxAttempts),
-          shuffleQuestions: true, // Mặc định trộn câu hỏi
+          shuffleQuestions: true,
         }),
 
-        // Map questions bỏ field id tạm
-        questions: questions.map(q => ({
-          text: q.text,
-          points: q.points,
-          options: q.options.map(o => ({
-            text: o.text,
-            is_correct: o.is_correct,
-          })),
-        })),
+        // Convert questions to API format
+        questions: questions.map(q => {
+          // Build options_json: {"A": "text1", "B": "text2", ...}
+          const optionsObj: Record<string, string> = {};
+          q.options.forEach((opt, idx) => {
+            const letter = String.fromCharCode(65 + idx); // A, B, C, D
+            optionsObj[letter] = opt.text;
+          });
+
+          // Build answer_key_json: {"correct": "A"}
+          const correctIndex = q.options.findIndex(opt => opt.is_correct);
+          const correctLetter = String.fromCharCode(65 + correctIndex);
+          const answerKeyObj = { correct: correctLetter };
+
+          return {
+            content: q.text,
+            options_json: JSON.stringify(optionsObj),
+            answer_key_json: JSON.stringify(answerKeyObj),
+            points: q.points,
+          };
+        }),
       };
 
       console.log('📦 Creating Quiz Payload:', payload);
 
-      // 4. Gọi API
-      await axios.post('http://localhost:3000/quizzes', payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // 4. Gọi API thông qua service
+      await quizService.createQuiz(payload);
 
       toast.success('Tạo bài thi và câu hỏi thành công!');
       navigate(-1);
@@ -269,7 +279,7 @@ export default function QuizCreate() {
 
               {/* Time Settings */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                <label className=" text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
                   <Clock size={16} /> Thời gian làm bài (phút)
                 </label>
                 <input
@@ -287,7 +297,7 @@ export default function QuizCreate() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                <label className=" text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
                   <Target size={16} /> Số lượt làm bài tối đa
                 </label>
                 <input
@@ -306,7 +316,7 @@ export default function QuizCreate() {
 
               {/* Date Settings */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                <label className=" text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
                   <Calendar size={16} /> Mở từ ngày
                 </label>
                 <input
@@ -320,7 +330,7 @@ export default function QuizCreate() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                <label className=" text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
                   <Calendar size={16} /> Hạn chót nộp
                 </label>
                 <input
@@ -356,19 +366,15 @@ export default function QuizCreate() {
 
           {/* --- SECTION 2: DANH SÁCH CÂU HỎI --- */}
           <div className="space-y-6">
+
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                 <CheckCircle className="text-[#49BBBD]" /> Danh sách câu hỏi (
                 {questions.length})
               </h2>
-              <button
-                type="button"
-                onClick={addQuestion}
-                className="flex items-center gap-2 bg-[#49BBBD] text-white px-4 py-2 rounded-lg font-bold hover:bg-[#3aa8aa] transition-all shadow-sm"
-              >
-                <PlusCircle size={18} /> Thêm câu hỏi
-              </button>
+
             </div>
+
 
             {questions.map((q, qIndex) => (
               <div
@@ -468,10 +474,23 @@ export default function QuizCreate() {
                 </div>
               </div>
             ))}
+
+            {/* Nút thêm câu hỏi */}
+            <div className="flex justify-end  ">
+              <button
+                type="button"
+                onClick={addQuestion}
+                className="flex items-center gap-2 bg-[#49BBBD] text-white px-4 py-2 rounded-lg font-bold hover:bg-[#3aa8aa] transition-all shadow-sm"
+              >
+                <PlusCircle size={18} /> Thêm câu hỏi
+              </button>
+            </div>
+
+
           </div>
 
           {/* --- FOOTER ACTIONS --- */}
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-10">
+          <div className=" bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-10">
             <div className="max-w-5xl mx-auto flex justify-between items-center">
               <div className="text-sm text-gray-500 flex items-center gap-2">
                 <AlertCircle size={16} />

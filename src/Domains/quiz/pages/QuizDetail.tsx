@@ -9,8 +9,12 @@ import {
   Calendar,
   CheckCircle,
   Clock,
+  Timer,
+  RotateCcw,
 } from 'lucide-react';
-import { toast } from 'react-toastify'; // Nhớ cài react-toastify nếu chưa có
+import { toast } from 'react-toastify';
+import { quizService } from '../services/quiz.service';
+import type { Quiz } from '../types';
 
 interface Attempt {
   atid: string;
@@ -27,11 +31,27 @@ export default function QuizDetail() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const quizName = location.state?.quizName || 'Chi tiết bài thi';
+  const quizNameFromState = location.state?.quizName;
 
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
+
+  // --- PHẦN 0: GỌI API LẤY THÔNG TIN QUIZ ---
+  useEffect(() => {
+    const fetchQuizInfo = async () => {
+      try {
+        const data = await quizService.getQuizById(qid!);
+        setQuiz(data);
+      } catch (error) {
+        console.error('Lỗi tải thông tin quiz:', error);
+        toast.error('Không thể tải thông tin bài thi.');
+      }
+    };
+
+    if (qid) fetchQuizInfo();
+  }, [qid]);
 
   // --- PHẦN 1: GỌI API LẤY LỊCH SỬ ---
   useEffect(() => {
@@ -75,7 +95,7 @@ export default function QuizDetail() {
   // --- PHẦN 2: XỬ LÝ LÀM BÀI (GỌI API THẬT) ---
   const handleStartQuiz = async () => {
     const token = localStorage.getItem('token');
-    const studentId = localStorage.getItem('studentId');
+    const studentId = localStorage.getItem('roleId');
 
     if (!studentId) {
       toast.error('Lỗi: Không tìm thấy thông tin sinh viên.');
@@ -126,6 +146,25 @@ export default function QuizDetail() {
     0
   );
 
+  // Lấy thông tin quiz
+  const quizName = quiz?.name || quizNameFromState || 'Chi tiết bài thi';
+  const quizDescription = quiz?.description;
+
+  // Parse settings
+  let timeLimit = null;
+  let maxAttempts = null;
+  try {
+    if (quiz?.settings_json) {
+      const settings = typeof quiz.settings_json === 'string'
+        ? JSON.parse(quiz.settings_json)
+        : quiz.settings_json;
+      timeLimit = settings?.timeLimit;
+      maxAttempts = settings?.maxAttempts;
+    }
+  } catch (e) {
+    console.error('Error parsing settings:', e);
+  }
+
   if (loading)
     return (
       <div className="text-center py-10 text-gray-500">Đang tải dữ liệu...</div>
@@ -145,13 +184,26 @@ export default function QuizDetail() {
           {/* Header */}
           <div className="bg-[#49BBBD] p-8 text-white">
             <h1 className="text-3xl font-bold mb-2">{quizName}</h1>
-            <div className="flex gap-6 opacity-90 text-sm">
+            {quizDescription && (
+              <p className="text-white/90 mb-3">{quizDescription}</p>
+            )}
+            <div className="flex gap-6 opacity-90 text-sm flex-wrap">
               <span className="flex items-center gap-2">
                 <History size={16} /> {attempts.length} lần thử
               </span>
               <span className="flex items-center gap-2">
                 <Award size={16} /> Điểm cao nhất: {bestScore}
               </span>
+              {timeLimit && (
+                <span className="flex items-center gap-2">
+                  <Timer size={16} /> Thời gian: {timeLimit} phút
+                </span>
+              )}
+              {maxAttempts && (
+                <span className="flex items-center gap-2">
+                  <RotateCcw size={16} /> Tối đa: {maxAttempts} lượt
+                </span>
+              )}
             </div>
           </div>
 
@@ -161,9 +213,9 @@ export default function QuizDetail() {
                 <h2 className="text-xl font-bold text-gray-800">
                   Lịch sử làm bài
                 </h2>
-                <p className="text-gray-500 text-sm mt-1">
+                {/* <p className="text-gray-500 text-sm mt-1">
                   ID Sinh viên: {localStorage.getItem('studentId')}
-                </p>
+                </p> */}
               </div>
 
               <button
@@ -204,7 +256,7 @@ export default function QuizDetail() {
                         </td>
                         <td className="py-4">
                           {att.status === 'completed' ||
-                          att.status === 'submitted' ? (
+                            att.status === 'submitted' ? (
                             <span className="flex items-center gap-1 text-green-600 text-sm font-medium bg-green-50 px-2 py-1 rounded w-fit">
                               <CheckCircle size={14} /> Hoàn thành
                             </span>

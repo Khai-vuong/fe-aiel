@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import {
   FileCheck,
   Timer,
@@ -11,19 +10,8 @@ import {
   Calendar,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-
-interface Quiz {
-  qid: string;
-  name: string;
-  description?: string;
-  available_until?: string;
-  status: string;
-  settings_json?: string | any;
-  _count?: {
-    questions: number;
-    attempts: number;
-  };
-}
+import { quizService } from '../services/quiz.service';
+import type { Quiz } from '../types';
 
 export default function QuizList() {
   const { clid } = useParams<{ clid: string }>();
@@ -37,17 +25,15 @@ export default function QuizList() {
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(
-          `http://localhost:3000/quizzes/class/${clid}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const data = await quizService.getQuizzesByClass(clid!);
 
         // Log dữ liệu ra để kiểm tra nếu cần
-        console.log('Quiz Data:', response.data);
+        console.log('Quiz Data:', data);
 
         setQuizzes(
-          response.data.sort((a: Quiz, b: Quiz) => a.qid.localeCompare(b.qid))
+          data
+            .filter((q: Quiz) => q.status.toLowerCase() === 'published')
+            .sort((a: Quiz, b: Quiz) => a.qid.localeCompare(b.qid))
         );
       } catch (err) {
         console.error('Failed to fetch quizzes:', err);
@@ -74,10 +60,7 @@ export default function QuizList() {
   const handleDeleteQuiz = async (quizId: string) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa bài kiểm tra này?')) return;
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3000/quizzes/${quizId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await quizService.deleteQuiz(quizId);
       setQuizzes(prev => prev.filter(q => q.qid !== quizId));
       toast.success('Đã xóa bài kiểm tra.');
     } catch (error) {
@@ -114,111 +97,118 @@ export default function QuizList() {
 
       <div className="space-y-3">
         {quizzes.length > 0 ? (
-          quizzes.map(quiz => {
-            let timeLimit = null;
-            let maxAttempts = null;
+          quizzes
+            .sort((a, b) => {
+              // Sắp xếp theo available_from (quiz mở sớm nhất trước)
+              if (!a.available_from && !b.available_from) return 0;
+              if (!a.available_from) return 1; // Quiz không có ngày mở sẽ xuống cuối
+              if (!b.available_from) return -1;
+              return new Date(b.available_from).getTime() - new Date(a.available_from).getTime();
+            })
+            .map(quiz => {
+              let timeLimit = null;
+              let maxAttempts = null;
 
-            try {
-              if (quiz.settings_json) {
-                const s =
-                  typeof quiz.settings_json === 'string'
-                    ? JSON.parse(quiz.settings_json)
-                    : quiz.settings_json;
-                if (s) {
-                  timeLimit = s.timeLimit;
-                  maxAttempts = s.maxAttempts;
+              try {
+                if (quiz.settings_json) {
+                  const s =
+                    typeof quiz.settings_json === 'string'
+                      ? JSON.parse(quiz.settings_json)
+                      : quiz.settings_json;
+                  if (s) {
+                    timeLimit = s.timeLimit;
+                    maxAttempts = s.maxAttempts;
+                  }
                 }
-              }
-            } catch (e) {}
+              } catch (e) { }
 
-            const rawDeadline = quiz.available_until || quiz.availableUntil;
-            const deadlineDate = getValidDate(rawDeadline);
+              const rawDeadline = quiz.available_until;
+              const deadlineDate = getValidDate(rawDeadline);
 
-            return (
-              <div
-                key={quiz.qid}
-                className="flex items-center justify-between p-4 rounded-lg border border-gray-300 hover:bg-gray-50 transition-all group"
-              >
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <div className="text-[#49BBBD]">
-                    <FileCheck size={28} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-gray-800">
-                        {quiz.name}
-                      </span>
-                      <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded border uppercase ${
-                          quiz.status === 'published'
+              return (
+                <div
+                  key={quiz.qid}
+                  className="flex items-center justify-between p-4 rounded-lg border border-gray-300 hover:bg-gray-50 transition-all group"
+                >
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className="text-[#49BBBD]">
+                      <FileCheck size={28} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-gray-800">
+                          {quiz.name}
+                        </span>
+                        {/* <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded border uppercase ${quiz.status === 'published'
                             ? 'bg-green-100 text-green-600 border-green-200'
                             : 'bg-gray-100 text-gray-500'
-                        }`}
+                          }`}
                       >
                         {quiz.status}
-                      </span>
-                    </div>
+                      </span> */}
+                      </div>
 
-                    {/* INFO ROW */}
-                    <div className="flex items-center text-[12px] text-gray-500 mt-1 gap-3 flex-wrap">
-                      {timeLimit && (
-                        <span className="flex items-center gap-1">
-                          <Timer size={12} /> {timeLimit}p
-                        </span>
-                      )}
+                      {/* INFO ROW */}
+                      <div className="flex items-center text-[12px] text-gray-500 mt-1 gap-3 flex-wrap">
+                        {timeLimit && (
+                          <span className="flex items-center gap-1">
+                            <Timer size={12} /> {timeLimit}p
+                          </span>
+                        )}
 
-                      {maxAttempts && (
-                        <span className="flex items-center gap-1">
-                          <RotateCcw size={12} /> {maxAttempts} lượt
-                        </span>
-                      )}
+                        {maxAttempts && (
+                          <span className="flex items-center gap-1">
+                            <RotateCcw size={12} /> {maxAttempts} lượt
+                          </span>
+                        )}
 
-                      {/* 👇 CHỈ HIỂN THỊ NẾU DEADLINE HỢP LỆ (deadlineDate khác null) */}
-                      {deadlineDate && (
-                        <span className="flex items-center gap-1 text-red-600 font-medium bg-red-50 px-2 py-0.5 rounded border border-red-100">
-                          <Calendar size={12} />
-                          Hạn chót:{' '}
-                          {deadlineDate.toLocaleString('vi-VN', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                          })}
-                        </span>
-                      )}
+                        {/* 👇 CHỈ HIỂN THỊ NẾU DEADLINE HỢP LỆ (deadlineDate khác null) */}
+                        {deadlineDate && (
+                          <span className="flex items-center gap-1 font-medium bg-red-50 px-2 py-0.5 rounded border border-red-100">
+                            <Calendar size={12} />
+                            Hạn chót:{' '}
+                            {deadlineDate.toLocaleString('vi-VN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  {userRole === 'Lecturer' ? (
-                    <>
+                  <div className="flex items-center gap-2">
+                    {userRole === 'Lecturer' ? (
+                      <>
+                        <button
+                          onClick={() => handleEditQuiz(quiz.qid)}
+                          className="p-2 text-gray-500 hover:text-[#49BBBD]"
+                        >
+                          <Edit size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteQuiz(quiz.qid)}
+                          className="p-2 text-gray-500 hover:text-red-600"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </>
+                    ) : (
                       <button
-                        onClick={() => handleEditQuiz(quiz.qid)}
-                        className="p-2 text-gray-500 hover:text-[#49BBBD]"
+                        onClick={() => handleViewDetail(quiz.qid, quiz.name)}
+                        className="bg-[#49BBBD] text-white px-4 py-1.5 rounded text-sm font-bold"
                       >
-                        <Edit size={18} />
+                        Làm bài
                       </button>
-                      <button
-                        onClick={() => handleDeleteQuiz(quiz.qid)}
-                        className="p-2 text-gray-500 hover:text-red-600"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => handleViewDetail(quiz.qid, quiz.name)}
-                      className="bg-[#49BBBD] text-white px-4 py-1.5 rounded text-sm font-bold"
-                    >
-                      Làm bài
-                    </button>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            })
         ) : (
           <div className="text-center p-6 text-gray-400 text-sm italic">
             Chưa có bài tập nào.
