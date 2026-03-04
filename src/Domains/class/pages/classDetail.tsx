@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getClassById } from '../services/classServices';
 import type { Class } from '../types';
 import QuizList from '../../quiz/pages/QuizList';
+import { quizService } from '../../quiz/services/quiz.service';
+import type { Quiz } from '../../quiz/types';
 import {
   FileText,
   Users,
@@ -23,6 +25,7 @@ export default function ClassDetail() {
   const [classData, setClassData] = useState<Class | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
 
   // ===== UI STATE =====
   const [activeTab, setActiveTab] = useState<'files' | 'quizzes'>('files');
@@ -51,6 +54,20 @@ export default function ClassDetail() {
       }
     };
     fetchClassDetails();
+  }, [clid]);
+
+  // ===== FETCH QUIZZES =====
+  useEffect(() => {
+    const fetchQuizzes = async () => {
+      try {
+        if (!clid) return;
+        const data = await quizService.getQuizzesByClass(clid);
+        setQuizzes(data);
+      } catch (err) {
+        console.error('Failed to fetch quizzes:', err);
+      }
+    };
+    fetchQuizzes();
   }, [clid]);
 
   if (loading) {
@@ -221,7 +238,7 @@ export default function ClassDetail() {
             >
               <div className="flex items-center justify-center gap-2">
                 <FileCheck className="w-5 h-5" />
-                <span>Quizzes</span>
+                <span>Quizzes ({quizzes.length || 0})</span>
               </div>
             </button>
           </div>

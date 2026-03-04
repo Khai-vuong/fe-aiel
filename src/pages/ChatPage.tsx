@@ -71,7 +71,7 @@ export default function ChatPage() {
   const userRole = localStorage.getItem('userRole');
 
   // 👇 Check quyền tạo thông báo
-  const canCreateNotification = userRole === 'Lecturer' || userRole === 'Admin';
+  const canCreateNotification = userRole === 'Admin';
 
   // --- STATE ---
   const [activeTab, setActiveTab] = useState<'chat' | 'notification'>('chat');

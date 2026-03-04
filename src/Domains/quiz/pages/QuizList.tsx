@@ -64,6 +64,7 @@ export default function QuizList() {
       setQuizzes(prev => prev.filter(q => q.qid !== quizId));
       toast.success('Đã xóa bài kiểm tra.');
     } catch (error) {
+      console.error('Error deleting quiz:', error);
       toast.error('Lỗi khi xóa bài kiểm tra.');
     }
   };

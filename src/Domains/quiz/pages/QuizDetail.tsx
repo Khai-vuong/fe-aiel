@@ -10,6 +10,7 @@ import {
   Clock,
   Timer,
   RotateCcw,
+  ChevronRight,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { quizService } from '../services/quiz.service';
@@ -220,13 +221,22 @@ export default function QuizDetail() {
                       <th className="py-3 font-medium">Trạng thái</th>
                       <th className="py-3 font-medium">Ngày bắt đầu</th>
                       <th className="py-3 font-medium">Điểm số</th>
+                      <th className="py-3 font-medium"></th>
                     </tr>
                   </thead>
                   <tbody className="text-gray-600">
                     {attempts.map(att => (
                       <tr
                         key={att.atid}
-                        className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
+                        onClick={() => {
+                          if (att.status === 'submitted' || att.status === 'graded') {
+                            navigate(`/quiz-result/${att.atid}`);
+                          }
+                        }}
+                        className={`border-b border-gray-50 transition-colors ${att.status === 'submitted' || att.status === 'graded'
+                            ? 'hover:bg-teal-50 cursor-pointer'
+                            : 'hover:bg-gray-50'
+                          }`}
                       >
                         <td className="py-4 font-bold text-[#49BBBD]">
                           #{att.attempt_number}
@@ -254,10 +264,18 @@ export default function QuizDetail() {
                             {att.percentage != null ? `${att.percentage.toFixed(1)}%` : '--'}
                           </span>
                         </td>
+                        <td className="py-4 text-right">
+                          {(att.status === 'submitted' || att.status === 'graded') && (
+                            <ChevronRight size={20} className="text-gray-400 inline-block" />
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+                <div className="mt-4 text-center text-sm text-gray-500 italic">
+                  💡 Nhấp vào bài thi đã hoàn thành để xem chi tiết kết quả
+                </div>
               </div>
             ) : (
               <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">

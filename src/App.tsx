@@ -18,9 +18,8 @@ import TakeQuiz from './Domains/quiz/pages/TakeQuiz';
 import QuizList from './Domains/quiz/pages/QuizList';
 import QuizDetail from './Domains/quiz/pages/QuizDetail';
 import QuizCreate from './Domains/quiz/pages/QuizCreate';
+import QuizEdit from './Domains/quiz/pages/QuizEdit';
 import QuizResult from './Domains/quiz/pages/QuizResult';
-// ❌ Đã xóa import QuizEdit để fix lỗi trắng màn hình
-// import QuizEdit from './Domains/quiz/pages/QuizEdit';
 
 // --- Class Imports ---
 import ClassesCatalog from './Domains/class/pages/classesCatalog';
@@ -65,8 +64,8 @@ const router = createBrowserRouter([
       // 2. Tạo Quiz mới
       { path: 'class/:clid/quiz/create', element: <QuizCreate /> },
 
-      // 3. ❌ Đã xóa route Edit Quiz tạm thời
-      // { path: 'class/:clid/quiz/:qid/edit', element: <QuizEdit /> },
+      // 3. Chỉnh sửa Quiz
+      { path: 'class/:clid/quiz/:qid/edit', element: <QuizEdit /> },
 
       // 4. Xem chi tiết / Lịch sử làm bài
       { path: 'class/:clid/quiz/:qid', element: <QuizDetail /> },

@@ -60,6 +60,14 @@ export interface QuestionCreateRequest {
   points?: number;
 }
 
+export interface QuestionUpdateRequest {
+  ques_id?: string; // If provided: UPDATE, if omitted: CREATE
+  content: string;
+  options_json?: string;
+  answer_key_json: string;
+  points?: number;
+}
+
 export interface QuizCreateRequest {
   name: string;
   description?: string;
@@ -80,6 +88,7 @@ export interface QuizUpdateRequest {
   status?: 'draft' | 'published' | 'archived';
   available_from?: string | null;
   available_until?: string | null;
+  questions?: QuestionUpdateRequest[]; // Now supports updating questions
 }
 
 // ====== ATTEMPT TYPES ======

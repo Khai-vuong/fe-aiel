@@ -40,7 +40,7 @@ export default function QuizEdit() {
     timeLimit: 0,
     maxAttempts: 1,
   });
-
+  // quíz
   // --- 1. FETCH DATA ---
   useEffect(() => {
     const fetchQuizData = async () => {
@@ -106,6 +106,7 @@ export default function QuizEdit() {
       const payload = {
         name: formData.name,
         description: formData.description,
+        clid: clid,
         status: formData.status,
         available_from: formData.available_from
           ? new Date(formData.available_from).toISOString()
@@ -281,13 +282,8 @@ export default function QuizEdit() {
                   <input
                     type="datetime-local"
                     value={formData.available_from}
-                    onChange={e =>
-                      setFormData({
-                        ...formData,
-                        available_from: e.target.value,
-                      })
-                    }
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#49BBBD] outline-none"
+                    disabled
+                    className="w-full p-3 border rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
                   />
                 </div>
                 <div>
