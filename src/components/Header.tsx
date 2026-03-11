@@ -1,16 +1,39 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { BotMessageSquare } from 'lucide-react';
+import { BotMessageSquare, Bell } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { NotiService } from '../Domains/notifications/services/notifications.service';
+
+const notiService = new NotiService();
 
 export default function Header() {
   const location = useLocation();
   const [username, setUsername] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const userRole = localStorage.getItem('userRole');
 
   useEffect(() => {
     setUsername(localStorage.getItem('username'));
+
+    // Fetch unread count if user is logged in
+    const fetchUnreadCount = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const result = await notiService.getUnreadNotificationsCount();
+          setUnreadCount(result.count);
+        } catch (error) {
+          console.error('Failed to fetch unread count:', error);
+        }
+      }
+    };
+
+    fetchUnreadCount();
+
+    // Refresh unread count every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
   }, [location.pathname]);
 
   // Màu chủ đạo: #49BBBD
@@ -96,8 +119,8 @@ export default function Header() {
               <Link
                 to="/login"
                 className={`px-5 py-2 rounded-full font-bold transition-all ${location.pathname === '/login'
-                    ? 'bg-[#49BBBD] text-white shadow-md shadow-teal-100'
-                    : 'text-gray-600 hover:text-[#49BBBD] hover:bg-gray-100'
+                  ? 'bg-[#49BBBD] text-white shadow-md shadow-teal-100'
+                  : 'text-gray-600 hover:text-[#49BBBD] hover:bg-gray-100'
                   }`}
               >
                 Login
@@ -105,8 +128,8 @@ export default function Header() {
               <Link
                 to="/register"
                 className={`px-5 py-2 rounded-full font-bold transition-all ${location.pathname === '/register'
-                    ? 'bg-[#49BBBD] text-white shadow-md shadow-teal-100'
-                    : 'text-gray-600 hover:text-[#49BBBD] hover:bg-gray-100'
+                  ? 'bg-[#49BBBD] text-white shadow-md shadow-teal-100'
+                  : 'text-gray-600 hover:text-[#49BBBD] hover:bg-gray-100'
                   }`}
               >
                 Sign Up
@@ -123,13 +146,27 @@ export default function Header() {
                 <BotMessageSquare className="w-5 h-5 text-white" />
               </Link>
 
+              {/* Notification Icon */}
+              <Link
+                to="/notifications"
+                className="relative p-2 bg-white text-gray-600 rounded-full shadow-sm hover:bg-gray-50 hover:shadow-md transition-all border border-gray-100"
+                title="Thông báo"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-md">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </Link>
+
               <div className="flex items-center gap-4 bg-gray-50 px-2 py-1 rounded-full border border-gray-100">
                 <Link
                   to="/student/profile"
                   className="flex items-center gap-3 pr-2"
                 >
                   <div className="w-9 h-9 bg-[#49BBBD] text-white rounded-full flex items-center justify-center font-bold shadow-sm">
-                    {username.charAt(0).toUpperCase()}
+                    {username?.charAt(0).toUpperCase()}
                   </div>
                   <div className="hidden lg:block text-left">
                     <p className="text-xs text-gray-400 leading-none font-medium text-left">

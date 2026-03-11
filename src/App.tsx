@@ -12,6 +12,7 @@ import NewCourseRegister from './pages/NewCourseRegister';
 import UserProfile from './Domains/user/pages/UserProfile';
 import InstructorDashboard from './Domains/class/pages/InstructorDashboard';
 import ChatPage from './Domains/ai/pages/ChatPage';
+import NotificationPage from './pages/NotificationPage';
 
 // --- Quiz Imports ---
 import TakeQuiz from './Domains/quiz/pages/TakeQuiz';
@@ -79,6 +80,7 @@ const router = createBrowserRouter([
       // --- Other ---
       { path: 'instructor/dashboard', element: <InstructorDashboard /> },
       { path: 'chat', element: <ChatPage /> },
+      { path: 'notifications', element: <NotificationPage /> },
     ],
   },
 ]);

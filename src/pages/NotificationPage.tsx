@@ -2,31 +2,36 @@ import { useEffect, useState } from 'react';
 import {
   FaCheckDouble,
   FaTrash,
-  FaEnvelopeOpenText,
-  FaPlus,
   FaBell,
+  FaArrowLeft,
 } from 'react-icons/fa';
-import { notificationService } from '../services/notificationService';
-import { Notification } from '../types/notification';
-import CreateNotificationModal from '../components/CreateNotificationModal';
+import { useNavigate } from 'react-router-dom';
+import { NotiService } from '../Domains/notifications/services/notifications.service';
+import type { Notification } from '../Domains/notifications/types';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+const notiService = new NotiService();
+
 export default function NotificationPage() {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<'ALL' | 'UNREAD'>('ALL');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const userRole = localStorage.getItem('userRole'); // Lấy role từ local storage
+  const [loading, setLoading] = useState(true);
 
   // Fetch dữ liệu
   const fetchNotifications = async () => {
     try {
-      const data = await notificationService.getMyNotifications({
-        is_read: filter === 'UNREAD' ? false : undefined, // Nếu ALL thì không gửi param này
-      });
+      setLoading(true);
+      const data = filter === 'UNREAD'
+        ? await notiService.getUnreadNotifications()
+        : await notiService.getMyNotifications();
       setNotifications(data);
     } catch (error) {
       console.error(error);
+      toast.error('Không thể tải thông báo');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -37,8 +42,7 @@ export default function NotificationPage() {
   // Xử lý đánh dấu đã đọc 1 cái
   const handleMarkAsRead = async (nid: string) => {
     try {
-      await notificationService.markAsRead(nid);
-      // Cập nhật UI local để đỡ phải fetch lại
+      await notiService.markNotificationAsRead(nid);
       setNotifications(prev =>
         prev.map(n => (n.nid === nid ? { ...n, is_read: true } : n))
       );
@@ -50,7 +54,7 @@ export default function NotificationPage() {
   // Xử lý đánh dấu tất cả đã đọc
   const handleMarkAllRead = async () => {
     try {
-      await notificationService.markAllAsRead();
+      await notiService.markAllNotificationsAsRead();
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
       toast.success('Đã đánh dấu tất cả là đã đọc');
     } catch (error) {
@@ -58,11 +62,11 @@ export default function NotificationPage() {
     }
   };
 
-  // Xử lý xóa (nếu cần)
+  // Xử lý xóa
   const handleDelete = async (nid: string) => {
     if (!window.confirm('Bạn muốn xóa thông báo này?')) return;
     try {
-      await notificationService.delete(nid);
+      await notiService.deleteNotification(nid);
       setNotifications(prev => prev.filter(n => n.nid !== nid));
       toast.success('Đã xóa thông báo');
     } catch (error) {
@@ -70,37 +74,57 @@ export default function NotificationPage() {
     }
   };
 
-  // Helper render màu sắc theo loại
+  // Helper functions
   const getTypeStyles = (type: string) => {
     switch (type) {
-      case 'WARNING':
+      case 'deadline_reminder':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'IMPORTANT':
-        return 'bg-red-100 text-red-800 border-red-200';
+      case 'grade_released':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'quiz_posted':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'enrollment_status':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       default:
-        return 'bg-blue-50 text-blue-800 border-blue-100'; // INFO
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'quiz_posted': return 'Quiz';
+      case 'grade_released': return 'Điểm';
+      case 'enrollment_status': return 'Đăng ký';
+      case 'deadline_reminder': return 'Nhắc nhở';
+      case 'assignment_submitted': return 'Bài tập';
+      default: return 'Thông báo';
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] p-8">
+    <div className="min-h-screen bg-[#F5F7FA] py-8 px-4">
       <ToastContainer />
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
-            <FaBell className="text-[#49BBBD]" /> Thông báo
-          </h1>
-
-          {/* Chỉ hiển thị nút tạo cho Lecturer hoặc Admin */}
-          {(userRole === 'Lecturer' || userRole === 'Admin') && (
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 bg-[#49BBBD] text-white px-4 py-2 rounded-lg hover:bg-[#3aa4a6] transition shadow-md"
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-lg bg-white hover:bg-gray-100 transition shadow-sm"
+              title="Quay lại"
             >
-              <FaPlus /> Gửi thông báo
+              <FaArrowLeft size={18} className="text-gray-600" />
             </button>
-          )}
+            <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+              <FaBell className="text-[#49BBBD]" /> Thông báo
+            </h1>
+          </div>
+          <button
+            onClick={handleMarkAllRead}
+            className="flex items-center gap-2 px-4 py-2 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3aa9ab] transition shadow-sm"
+          >
+            <FaCheckDouble /> Đánh dấu tất cả đã đọc
+          </button>
         </div>
 
         {/* Toolbar & Filter */}
@@ -119,40 +143,44 @@ export default function NotificationPage() {
               Chưa đọc
             </button>
           </div>
-
-          <button
-            onClick={handleMarkAllRead}
-            className="text-sm text-[#49BBBD] font-semibold hover:underline flex items-center gap-2"
-          >
-            <FaCheckDouble /> Đánh dấu tất cả đã đọc
-          </button>
         </div>
 
-        {/* Notification List */}
+        {/* List */}
         <div className="space-y-3">
-          {notifications.length === 0 ? (
-            <div className="text-center py-10 text-gray-500">
-              Không có thông báo nào.
+          {loading ? (
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white p-5 rounded-xl border border-gray-100 animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+                <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-full"></div>
+              </div>
+            ))
+          ) : notifications.length === 0 ? (
+            <div className="text-center py-16 text-gray-500 bg-white rounded-xl">
+              <FaBell size={48} className="mx-auto mb-4 opacity-20" />
+              <p className="text-lg font-medium">Không có thông báo nào</p>
+              <p className="text-sm mt-1">Bạn chưa nhận được thông báo nào</p>
             </div>
           ) : (
             notifications.map(notif => (
               <div
                 key={notif.nid}
-                className={`group relative p-5 rounded-xl border transition-all duration-200 ${notif.is_read
-                  ? 'bg-white border-gray-100'
-                  : 'bg-white border-l-4 border-l-[#49BBBD] shadow-md'
+                onClick={() => !notif.is_read && handleMarkAsRead(notif.nid)}
+                className={`group relative p-5 rounded-xl border transition-all duration-200 cursor-pointer ${notif.is_read
+                  ? 'bg-white border-gray-100 hover:border-gray-200'
+                  : 'bg-white border-l-4 border-l-[#49BBBD] shadow-md hover:shadow-lg'
                   }`}
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span
-                        className={`text-[10px] px-2 py-0.5 rounded border font-bold ${getTypeStyles(notif.type)}`}
+                        className={`text-[10px] px-2 py-0.5 rounded border font-bold uppercase ${getTypeStyles(notif.type)}`}
                       >
-                        {notif.type}
+                        {getTypeLabel(notif.type)}
                       </span>
                       <span className="text-xs text-gray-400">
-                        {new Date(notif.created_at).toLocaleString()}
+                        {new Date(notif.created_at).toLocaleString('vi-VN')}
                       </span>
                     </div>
 
@@ -168,21 +196,15 @@ export default function NotificationPage() {
 
                   {/* Actions */}
                   <div className="flex flex-col gap-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {/* {!notif.is_read && (
-                      <button
-                        onClick={() => handleMarkAsRead(notif.nid)}
-                        title="Đánh dấu đã đọc"
-                        className="p-2 text-gray-400 hover:text-[#49BBBD] hover:bg-blue-50 rounded-full"
-                      >
-                        <FaEnvelopeOpenText />
-                      </button>
-                    )} */}
                     <button
-                      onClick={() => handleDelete(notif.nid)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(notif.nid);
+                      }}
                       title="Xóa"
-                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full"
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition"
                     >
-                      <FaTrash />
+                      <FaTrash size={14} />
                     </button>
                   </div>
                 </div>
@@ -196,14 +218,6 @@ export default function NotificationPage() {
           )}
         </div>
       </div>
-
-      {/* Modal */}
-      {showCreateModal && (
-        <CreateNotificationModal
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={fetchNotifications}
-        />
-      )}
     </div>
   );
 }
