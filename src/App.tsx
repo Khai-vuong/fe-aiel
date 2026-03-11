@@ -11,7 +11,7 @@ import CourseRegister from './pages/CourseRegister';
 import NewCourseRegister from './pages/NewCourseRegister';
 import UserProfile from './Domains/user/pages/UserProfile';
 import InstructorDashboard from './Domains/class/pages/InstructorDashboard';
-import ChatPage from './pages/ChatPage';
+import ChatPage from './Domains/ai/pages/ChatPage';
 
 // --- Quiz Imports ---
 import TakeQuiz from './Domains/quiz/pages/TakeQuiz';

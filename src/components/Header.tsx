@@ -95,21 +95,19 @@ export default function Header() {
             <div className="flex items-center gap-2 bg-gray-50 px-2 py-1 rounded-full border border-gray-100">
               <Link
                 to="/login"
-                className={`px-5 py-2 rounded-full font-bold transition-all ${
-                  location.pathname === '/login'
+                className={`px-5 py-2 rounded-full font-bold transition-all ${location.pathname === '/login'
                     ? 'bg-[#49BBBD] text-white shadow-md shadow-teal-100'
                     : 'text-gray-600 hover:text-[#49BBBD] hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 Login
               </Link>
               <Link
                 to="/register"
-                className={`px-5 py-2 rounded-full font-bold transition-all ${
-                  location.pathname === '/register'
+                className={`px-5 py-2 rounded-full font-bold transition-all ${location.pathname === '/register'
                     ? 'bg-[#49BBBD] text-white shadow-md shadow-teal-100'
                     : 'text-gray-600 hover:text-[#49BBBD] hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 Sign Up
               </Link>
