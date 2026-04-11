@@ -1,20 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   FaArrowLeft,
+  FaArchive,
+  FaEdit,
   FaPaperPlane,
   FaPlus,
   FaTrash,
-  FaArchive,
   FaRobot,
   FaUser,
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
-import aiConversationService from '../services/AiConversation.service';
+import aiConversationService from '../services/AiConversation.service.js';
 import type {
   ConversationSummary,
   Message,
-} from '../services/AiConversation.service';
+} from '../services/AiConversation.service.js';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -27,6 +28,30 @@ const formatDate = (iso: string) =>
     month: '2-digit',
   });
 
+const normalizeMarkdownContent = (raw: string) => {
+  // Some providers return escaped newlines ("\\n") instead of real line breaks.
+  const content = raw.replace(/\\n/g, '\n');
+  const lines = content.split('\n');
+  let hasParentBullet = false;
+
+  return lines
+    .map((line) => {
+      const trimmed = line.trim();
+
+      if (/^[*-]\s+/.test(trimmed)) {
+        hasParentBullet = true;
+        return `- ${trimmed.replace(/^[*-]\s+/, '')}`;
+      }
+
+      if (hasParentBullet && /^\+\s+/.test(trimmed)) {
+        return `  - ${trimmed.replace(/^\+\s+/, '')}`;
+      }
+
+      return line;
+    })
+    .join('\n');
+};
+
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
 /** Mỗi item trong sidebar conversation list */
@@ -34,14 +59,16 @@ function ConversationItem({
   conv,
   isActive,
   onClick,
-  onDelete,
+  onRename,
   onArchive,
+  onDelete,
 }: {
   conv: ConversationSummary;
   isActive: boolean;
   onClick: () => void;
-  onDelete: (e: React.MouseEvent) => void;
+  onRename: (e: React.MouseEvent) => void;
   onArchive: (e: React.MouseEvent) => void;
+  onDelete: (e: React.MouseEvent) => void;
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -88,15 +115,27 @@ function ConversationItem({
           {conv.messageCount} msgs
         </span>
 
-        {/* Action buttons – chỉ hiện khi hover */}
+        {/* Action button – chỉ hiện khi hover */}
         {hovered && (
           <div className="flex gap-1">
             <button
-              title="Archive"
+              title="Rename"
+              onClick={onRename}
+              className={`p-1 rounded-md transition ${isActive
+                ? 'hover:bg-white/20 text-white'
+                : 'hover:bg-blue-100 text-blue-500'
+                }`}
+            >
+              <FaEdit size={11} />
+            </button>
+            <button
+              title={conv.status === 'archived' ? 'Unarchive' : 'Archive'}
               onClick={onArchive}
               className={`p-1 rounded-md transition ${isActive
                 ? 'hover:bg-white/20 text-white'
-                : 'hover:bg-yellow-100 text-yellow-500'
+                : conv.status === 'archived'
+                  ? 'hover:bg-green-100 text-green-600'
+                  : 'hover:bg-yellow-100 text-yellow-600'
                 }`}
             >
               <FaArchive size={11} />
@@ -121,6 +160,11 @@ function ConversationItem({
 /** Bubble cho từng message */
 function MessageBubble({ msg }: { msg: Message }) {
   const isUser = msg.role === 'user';
+  const processingTime =
+    typeof msg.metadata?.processingTime === 'number'
+      ? msg.metadata.processingTime
+      : null;
+  const normalizedContent = normalizeMarkdownContent(msg.content);
 
   return (
     <div className={`flex gap-2.5 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -149,42 +193,99 @@ function MessageBubble({ msg }: { msg: Message }) {
         >
           <ReactMarkdown
             components={{
-              // Customize rendering for different elements
+              // Headings
+              h1: ({ children }) => <h1 className="text-lg font-bold mb-3 mt-4 first:mt-0">{children}</h1>,
+              h2: ({ children }) => <h2 className="text-base font-bold mb-2 mt-3 first:mt-0">{children}</h2>,
+              h3: ({ children }) => <h3 className="text-sm font-bold mb-2 mt-2 first:mt-0">{children}</h3>,
+              h4: ({ children }) => <h4 className="text-sm font-semibold mb-2 mt-2 first:mt-0">{children}</h4>,
+              h5: ({ children }) => <h5 className="text-xs font-semibold mb-1 mt-2 first:mt-0">{children}</h5>,
+              h6: ({ children }) => <h6 className="text-xs font-semibold mb-1 mt-2 first:mt-0">{children}</h6>,
+
+              // Paragraph
               p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+
+              // Text formatting
               strong: ({ children }) => <strong className="font-bold">{children}</strong>,
               em: ({ children }) => <em className="italic">{children}</em>,
-              ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-              ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
-              li: ({ children }) => <li className="ml-2">{children}</li>,
+
+              // Lists
+              ul: ({ children }) => (
+                <ul className="list-disc list-outside mb-2 space-y-0.5 pl-5 [&_ul]:mt-1 [&_ul]:pl-5 [&_ul]:list-circle">
+                  {children}
+                </ul>
+              ),
+              ol: ({ children }) => (
+                <ol className="list-decimal list-outside mb-2 space-y-0.5 pl-5 [&_ol]:mt-1 [&_ol]:pl-5">
+                  {children}
+                </ol>
+              ),
+              li: ({ children }) => <li className="ml-1">{children}</li>,
+
+              // Blockquote
+              blockquote: ({ children }) => (
+                <blockquote className="border-l-3 border-gray-300 pl-3 py-1 mb-2 italic text-gray-600">
+                  {children}
+                </blockquote>
+              ),
+
+              // Code
               code: ({ children, className }) => {
-                // Inline code
-                if (!className) {
+                // Code block (has language class)
+                if (className) {
                   return (
-                    <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-xs font-mono">
-                      {children}
-                    </code>
+                    <pre className="bg-gray-900 text-gray-100 p-3 rounded text-xs font-mono overflow-x-auto mb-2">
+                      <code>{children}</code>
+                    </pre>
                   );
                 }
-                // Code block
+                // Inline code
                 return (
-                  <code className="block bg-gray-100 text-gray-800 p-2 rounded text-xs font-mono overflow-x-auto">
+                  <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-xs font-mono">
                     {children}
                   </code>
                 );
               },
+
+              // Pre (for code blocks)
+              pre: ({ children }) => <pre className="overflow-x-auto mb-2">{children}</pre>,
+
+              // Links
               a: ({ children, href }) => (
                 <a
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-500 hover:underline"
+                  className={`underline hover:opacity-80 ${isUser ? 'text-blue-200' : 'text-blue-500'}`}
                 >
                   {children}
                 </a>
               ),
+
+              // Horizontal rule
+              hr: () => <hr className="my-2 border-gray-300" />,
+
+              // Table
+              table: ({ children }) => (
+                <table className="w-full border-collapse mb-2 text-xs">
+                  {children}
+                </table>
+              ),
+              thead: ({ children }) => <thead className="bg-gray-100">{children}</thead>,
+              tbody: ({ children }) => <tbody>{children}</tbody>,
+              tr: ({ children }) => <tr className="border border-gray-300">{children}</tr>,
+              th: ({ children }) => (
+                <th className="border border-gray-300 px-2 py-1 text-left font-semibold">
+                  {children}
+                </th>
+              ),
+              td: ({ children }) => (
+                <td className="border border-gray-300 px-2 py-1">
+                  {children}
+                </td>
+              ),
             }}
           >
-            {msg.content}
+            {normalizedContent}
           </ReactMarkdown>
         </div>
 
@@ -199,7 +300,10 @@ function MessageBubble({ msg }: { msg: Message }) {
             </span>
           )}
           {msg.modelName && (
-            <span className="text-[10px] text-gray-300">· {msg.modelName}</span>
+            <span className="text-[10px] text-gray-300">
+              · {msg.modelName}
+              {processingTime !== null ? ` (${processingTime} ms)` : ''}
+            </span>
           )}
         </div>
       </div>
@@ -296,7 +400,6 @@ export default function ChatPage() {
       const res = await aiConversationService.getConversations({
         limit: CONV_LIMIT,
         offset,
-        status: 'active',
       });
 
       setConversations(prev =>
@@ -316,8 +419,10 @@ export default function ChatPage() {
       setMsgLoading(true);
       setMessages([]);
 
-      const res =
-        await aiConversationService.getConversationById(conversationId);
+      const res = await aiConversationService.getConversationMessages(
+        conversationId,
+        { limit: 50 },
+      );
       setMessages(res.messages);
       setActiveTitle(res.conversation.title ?? 'Untitled conversation');
     } catch {
@@ -355,22 +460,72 @@ export default function ChatPage() {
     }
   };
 
+  const handleRenameConversation = async (
+    e: React.MouseEvent,
+    conversationId: string,
+    currentTitle: string | null,
+  ) => {
+    e.stopPropagation();
+
+    const nextTitle = prompt('Nhập tên mới cho conversation', currentTitle ?? '');
+    if (nextTitle === null) return;
+
+    const trimmedTitle = nextTitle.trim();
+    if (!trimmedTitle) {
+      alert('Tên conversation không được để trống');
+      return;
+    }
+
+    try {
+      await aiConversationService.renameConversation(conversationId, {
+        title: trimmedTitle,
+      });
+
+      setConversations(prev =>
+        prev.map(c =>
+          c.conversationId === conversationId
+            ? {
+              ...c,
+              title: trimmedTitle,
+              updatedAt: new Date().toISOString(),
+            }
+            : c,
+        ),
+      );
+
+      if (activeConvId === conversationId) {
+        setActiveTitle(trimmedTitle);
+      }
+    } catch {
+      alert('Đổi tên conversation thất bại');
+    }
+  };
+
   const handleArchiveConversation = async (
     e: React.MouseEvent,
     conversationId: string,
+    archived: boolean,
   ) => {
     e.stopPropagation();
+
     try {
-      await aiConversationService.archiveConversation(conversationId);
+      await aiConversationService.archiveConversation(conversationId, {
+        archived: !archived,
+      });
+
       setConversations(prev =>
-        prev.filter(c => c.conversationId !== conversationId),
+        prev.map(c =>
+          c.conversationId === conversationId
+            ? {
+              ...c,
+              status: archived ? 'active' : 'archived',
+              updatedAt: new Date().toISOString(),
+            }
+            : c,
+        ),
       );
-      if (activeConvId === conversationId) {
-        setActiveConvId(null);
-        setMessages([]);
-      }
     } catch {
-      alert('Archive thất bại');
+      alert('Cập nhật trạng thái archive thất bại');
     }
   };
 
@@ -402,42 +557,44 @@ export default function ChatPage() {
 
     try {
       // Gọi API directChat
-      const res = await aiConversationService.sendDirectChat({
+      const res = await aiConversationService.sendChat({
         text: userText,
         conversationId: activeConvId ?? undefined,
+        provider: 'groq',
+        metadata: {
+          sendFrom: "ChatPage"
+        },
+
       });
+
+      if (!res.success) {
+        throw new Error(res.error?.message ?? 'AI chat failed');
+      }
 
       // Nếu là conversation mới (không có activeConvId trước đó)
       if (!activeConvId && res.conversationId) {
         setActiveConvId(res.conversationId);
         // Refresh danh sách conversations để hiển thị conversation mới
-        fetchConversations(true);
-
-        // Fetch conversation detail để lấy title
-        try {
-          const convDetail = await aiConversationService.getConversationById(res.conversationId);
-          setActiveTitle(convDetail.conversation.title ?? 'New conversation');
-        } catch (error) {
-          console.error('Failed to fetch conversation detail:', error);
-          setActiveTitle('New conversation');
-        }
+        await fetchConversations(true);
+        setActiveTitle(res.conversationTitle ?? 'New conversation');
       }
 
       // Thêm message từ assistant
+      const assistantCreatedAt = res.metadata?.createdAt ?? new Date().toISOString();
       const assistantMessage: Message = {
-        messageId: res.messageId,
-        conversationId: res.conversationId,
-        role: res.role as 'assistant',
+        messageId: res.messageId ?? `temp-assistant-${Date.now()}`,
+        conversationId: res.conversationId ?? activeConvId ?? '',
+        role: 'assistant',
         content: res.text,
         contentJson: null,
         parentMessageId: null,
         promptTokens: null,
         completionTokens: null,
         totalTokens: null,
-        modelName: res.metadata?.provider || null,
-        metadata: res.metadata,
-        createdAt: res.metadata.createdAt,
-        updatedAt: res.metadata.createdAt,
+        modelName: res.metadata?.provider ?? null,
+        metadata: (res.metadata as Record<string, unknown> | undefined) ?? null,
+        createdAt: assistantCreatedAt,
+        updatedAt: assistantCreatedAt,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -513,11 +670,18 @@ export default function ChatPage() {
                   conv={conv}
                   isActive={activeConvId === conv.conversationId}
                   onClick={() => handleSelectConversation(conv)}
-                  onDelete={e =>
-                    handleDeleteConversation(e, conv.conversationId)
+                  onRename={e =>
+                    handleRenameConversation(e, conv.conversationId, conv.title)
                   }
                   onArchive={e =>
-                    handleArchiveConversation(e, conv.conversationId)
+                    handleArchiveConversation(
+                      e,
+                      conv.conversationId,
+                      conv.status === 'archived',
+                    )
+                  }
+                  onDelete={e =>
+                    handleDeleteConversation(e, conv.conversationId)
                   }
                 />
               ))}
