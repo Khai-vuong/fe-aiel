@@ -287,6 +287,7 @@ export default function QuizCreate() {
     try {
       const response = await quizGenService.generateQuiz({
         text: prompt,
+        // metadata: {sendFrom: 'QuizCreatePage'}
         ...(preferredProvider !== 'auto' ? { provider: preferredProvider } : {}),
       });
 

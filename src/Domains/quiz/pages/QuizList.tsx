@@ -32,7 +32,15 @@ export default function QuizList() {
 
         setQuizzes(
           data
-            .filter((q: Quiz) => q.status.toLowerCase() === 'published')
+            .filter((q: Quiz) => {
+              const status = q.status?.toLowerCase();
+
+              if (userRole === 'Lecturer') {
+                return status === 'published' || status === 'draft';
+              }
+
+              return status === 'published';
+            })
             .sort((a: Quiz, b: Quiz) => a.qid.localeCompare(b.qid))
         );
       } catch (err) {
@@ -140,6 +148,12 @@ export default function QuizList() {
                         <span className="font-bold text-gray-800">
                           {quiz.name}
                         </span>
+                        {userRole === 'Lecturer' &&
+                          quiz.status?.toLowerCase() === 'draft' && (
+                            <span className="text-[10px] px-2 py-0.5 rounded border uppercase bg-amber-100 text-amber-700 border-amber-200 font-semibold">
+                              Draft
+                            </span>
+                          )}
                         {/* <span
                         className={`text-[10px] px-1.5 py-0.5 rounded border uppercase ${quiz.status === 'published'
                             ? 'bg-green-100 text-green-600 border-green-200'

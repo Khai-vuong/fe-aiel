@@ -97,7 +97,7 @@ export default function ClassDetail() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="w-[80vw] mx-auto">
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6">
         {/* ===== HEADER ===== */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex items-start justify-between mb-4">

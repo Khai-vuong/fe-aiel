@@ -6,7 +6,11 @@ import { NotiService } from '../Domains/notifications/services/notifications.ser
 
 const notiService = new NotiService();
 
-export default function Header() {
+type HeaderProps = {
+  onToggleAiSidebar: () => void;
+};
+
+export default function Header({ onToggleAiSidebar }: HeaderProps) {
   const location = useLocation();
   const [username, setUsername] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -53,15 +57,27 @@ export default function Header() {
   return (
     <header className="bg-white sticky top-0 z-50 shadow-sm border-b border-gray-100">
       <div className="container mx-auto flex justify-between items-center px-6 py-3">
-        {/* LOGO */}
-        <Link to="/" className="flex items-center gap-2 group">
-          <div className="bg-[#49BBBD] text-white w-10 h-10 flex items-center justify-center rounded-xl shadow-lg shadow-teal-100 group-hover:rotate-12 transition-transform duration-300">
-            <span className="text-xl font-black">TK</span>
-          </div>
-          <span className="text-2xl font-black tracking-tighter text-gray-800">
-            EDU<span className="text-[#49BBBD]">.</span>
-          </span>
-        </Link>
+        <div className="flex items-center gap-3">
+          {/* LOGO */}
+          <Link to="/" className="flex items-center gap-2 group">
+            <div className="bg-[#49BBBD] text-white w-10 h-10 flex items-center justify-center rounded-xl shadow-lg shadow-teal-100 group-hover:rotate-12 transition-transform duration-300">
+              <span className="text-xl font-black">TK</span>
+            </div>
+            <span className="text-2xl font-black tracking-tighter text-gray-800">
+              EDU<span className="text-[#49BBBD]">.</span>
+            </span>
+          </Link>
+
+          <button
+            type="button"
+            onClick={onToggleAiSidebar}
+            className="flex items-center gap-2 rounded-full border border-[#49BBBD]/20 bg-[#49BBBD]/10 px-4 py-2 text-sm font-semibold text-[#0f6b6c] transition-all hover:bg-[#49BBBD] hover:text-white hover:shadow-md hover:shadow-teal-100"
+            title="Mở trợ lý AI"
+          >
+            <BotMessageSquare className="w-4 h-4" />
+            <span className="hidden sm:inline">Trợ lý AI</span>
+          </button>
+        </div>
 
         {/* MAIN MENU */}
         <nav className="hidden md:flex gap-8 items-center">
