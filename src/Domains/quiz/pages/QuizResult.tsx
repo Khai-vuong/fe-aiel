@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft,
-    Award,
     CheckCircle,
     XCircle,
     Calendar,
@@ -159,8 +158,6 @@ export default function QuizResult() {
     }
 
     const percentage = attempt.percentage || 0;
-    const score = attempt.score || 0;
-    const maxScore = attempt.max_score || 0;
     const correctCount = questions.filter(q => q.is_correct).length;
     const totalQuestions = questions.length;
 

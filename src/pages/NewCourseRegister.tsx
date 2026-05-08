@@ -162,6 +162,13 @@ export default function NewCourseRegister() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 -mt-12 relative z-20">
+        {error && (
+          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-700 flex items-start gap-3">
+            <FaExclamationTriangle className="mt-0.5 shrink-0" />
+            <p className="text-sm font-semibold">{error}</p>
+          </div>
+        )}
+
         {loading ? (
           <div className="flex flex-col justify-center items-center py-24 bg-white rounded-[2.5rem] shadow-xl border border-gray-100">
             <FaSpinner className="animate-spin text-[#49BBBD] text-5xl mb-4" />
@@ -227,11 +234,10 @@ export default function NewCourseRegister() {
                     <button
                       disabled={processingId === course.cid}
                       onClick={() => handleRegister(course.cid, course.name)}
-                      className={`mt-10 w-full py-4 rounded-[1.5rem] font-black flex items-center justify-center gap-3 shadow-lg transition-all duration-300 active:scale-95 ${
-                        processingId === course.cid
+                      className={`mt-10 w-full py-4 rounded-[1.5rem] font-black flex items-center justify-center gap-3 shadow-lg transition-all duration-300 active:scale-95 ${processingId === course.cid
                           ? 'bg-gray-400 cursor-not-allowed'
                           : 'bg-gray-900 text-white hover:bg-[#49BBBD] shadow-gray-200'
-                      }`}
+                        }`}
                     >
                       {processingId === course.cid ? (
                         <FaSpinner className="animate-spin" />

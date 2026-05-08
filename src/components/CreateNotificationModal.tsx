@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { notificationService } from '../services/notificationService';
+import { notificationService } from '@/Domains/notifications/services';
+import type { NotificationType } from '@/Domains/notifications/types';
 import { toast } from 'react-toastify';
 
 interface Props {
@@ -13,7 +14,7 @@ export default function CreateNotificationModal({ onClose, onSuccess }: Props) {
   const [recipientIds, setRecipientIds] = useState(''); // Nhập danh sách ID cách nhau dấu phẩy
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
-  const [type, setType] = useState('INFO');
+  const [type, setType] = useState<NotificationType>('general');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
@@ -24,8 +25,8 @@ export default function CreateNotificationModal({ onClose, onSuccess }: Props) {
     try {
       if (mode === 'SINGLE') {
         if (!recipientId) return toast.warning('Vui lòng nhập ID người nhận');
-        await notificationService.create({
-          recipient_id: recipientId,
+        await notificationService.createNotification({
+          recipient_uid: recipientId,
           title,
           message,
           type,
@@ -40,7 +41,7 @@ export default function CreateNotificationModal({ onClose, onSuccess }: Props) {
         if (recipientsList.length === 0)
           return toast.warning('Danh sách người nhận trống');
 
-        await notificationService.createBulk({
+        await notificationService.createBulkNotifications({
           recipients: recipientsList,
           title,
           message,
@@ -121,11 +122,11 @@ export default function CreateNotificationModal({ onClose, onSuccess }: Props) {
             <select
               className="w-full border rounded-lg p-2 mt-1"
               value={type}
-              onChange={e => setType(e.target.value)}
+              onChange={e => setType(e.target.value as NotificationType)}
             >
-              <option value="INFO">Thông tin (Info)</option>
-              <option value="WARNING">Cảnh báo (Warning)</option>
-              <option value="IMPORTANT">Quan trọng (Important)</option>
+              <option value="general">Thông tin chung</option>
+              <option value="deadline_reminder">Nhắc hạn nộp</option>
+              <option value="grade_released">Điểm đã công bố</option>
             </select>
           </div>
 

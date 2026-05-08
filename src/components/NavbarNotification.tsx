@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FaBell } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import { notificationService } from '../services/notificationService';
+import { notificationService } from '@/Domains/notifications/services';
 
 export default function NavbarNotification() {
   const navigate = useNavigate();
@@ -10,7 +10,7 @@ export default function NavbarNotification() {
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const res = await notificationService.getUnreadCount();
+        const res = await notificationService.getUnreadNotificationsCount();
         // Điều chỉnh tùy theo format trả về của BE, ví dụ res.count hoặc res
         setUnreadCount(typeof res === 'number' ? res : res.count || 0);
       } catch (error) {

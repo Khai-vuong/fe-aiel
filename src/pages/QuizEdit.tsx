@@ -154,14 +154,6 @@ export default function QuizEdit() {
     }
   };
 
-  // --- 4. NAVIGATE TO ADD QUESTION ---
-  const handleAddQuestion = () => {
-    // Chuyển hướng sang trang thêm câu hỏi (Cần tạo thêm trang này nếu muốn)
-    // Hoặc mở Modal thêm câu hỏi tại đây
-    // Tạm thời navigate sang route thêm
-    navigate(`/class/${clid}/quiz/${qid}/question/add`);
-  };
-
   if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center">

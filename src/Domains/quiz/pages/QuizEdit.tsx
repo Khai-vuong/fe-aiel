@@ -6,7 +6,6 @@ import {
   Clock,
   Calendar,
   Type,
-  PlusCircle,
   Plus,
   Trash2,
   CheckCircle,
@@ -115,7 +114,7 @@ export default function QuizEdit() {
 
                 if (typeof optionsData === 'object' && optionsData !== null) {
                   // Convert {"A": "text1", "B": "text2"} to array
-                  options = Object.entries(optionsData).map(([key, value]) => ({
+                  options = Object.entries(optionsData).map(([, value]) => ({
                     text: String(value),
                     is_correct: false, // Will set later
                   }));
@@ -218,31 +217,6 @@ export default function QuizEdit() {
     }
     const newQuestions = [...questions];
     newQuestions.splice(index, 1);
-    setQuestions(newQuestions);
-  };
-
-  const updateQuestionText = (index: number, text: string) => {
-    const newQuestions = [...questions];
-    newQuestions[index].text = text;
-    setQuestions(newQuestions);
-  };
-
-  const updateQuestionPoints = (index: number, points: number) => {
-    const newQuestions = [...questions];
-    newQuestions[index].points = points;
-    setQuestions(newQuestions);
-  };
-
-  const updateOptionText = (qIndex: number, oIndex: number, text: string) => {
-    const newQuestions = [...questions];
-    newQuestions[qIndex].options[oIndex].text = text;
-    setQuestions(newQuestions);
-  };
-
-  const setCorrectOption = (qIndex: number, oIndex: number) => {
-    const newQuestions = [...questions];
-    newQuestions[qIndex].options.forEach(opt => (opt.is_correct = false));
-    newQuestions[qIndex].options[oIndex].is_correct = true;
     setQuestions(newQuestions);
   };
 
