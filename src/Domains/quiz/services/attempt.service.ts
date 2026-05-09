@@ -79,7 +79,7 @@ class AttemptService {
    */
   async getAttemptById(attemptId: string): Promise<Attempt> {
     const response = await axios.get(
-      `${API_BASE_URL}/attempts/${attemptId}`,
+      `${BASE_URL}/attempts/${attemptId}`,
       {
         headers: this.getAuthHeader(),
       }
@@ -96,7 +96,7 @@ class AttemptService {
     data: AttemptUpdateRequest
   ): Promise<Attempt> {
     const response = await axios.put(
-      `${API_BASE_URL}/attempts/${attemptId}`,
+      `${BASE_URL}/attempts/${attemptId}`,
       data,
       {
         headers: this.getAuthHeader(),
