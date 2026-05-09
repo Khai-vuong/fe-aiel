@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import courseService from '@/Domains/course/services/course.service';
 import {
   FaPlus,
   FaBook,
@@ -27,16 +27,8 @@ export default function CourseRegister() {
   const fetchCourses = useCallback(async () => {
     try {
       setLoading(true);
-      const savedToken = localStorage.getItem('token');
-      if (!savedToken) return;
-
-      const response = await axios.get(
-        `http://localhost:3000/courses?t=${Date.now()}`,
-        {
-          headers: { Authorization: `Bearer ${savedToken}` },
-        }
-      );
-      setCourses(response.data);
+      const response = await courseService.getAllCourses();
+      setCourses(response);
     } catch (err: any) {
       toast.error('Không thể cập nhật danh sách môn học.');
     } finally {
@@ -52,11 +44,8 @@ export default function CourseRegister() {
     try {
       setIsModalLoading(true);
       setSelectedCourse({ loading: true });
-      const savedToken = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:3000/courses/${cid}`, {
-        headers: { Authorization: `Bearer ${savedToken}` },
-      });
-      setSelectedCourse(response.data);
+      const response = await courseService.getCourseById(cid);
+      setSelectedCourse(response);
     } catch (err) {
       toast.error('Lỗi tải dữ liệu chi tiết.');
       setSelectedCourse(null);
