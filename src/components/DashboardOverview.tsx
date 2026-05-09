@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import courseService from '@/Domains/course/services/course.service';
+import logsService from '@/Domains/logs/services/logs.service';
 import { FaUsers, FaBook, FaClipboardCheck, FaChartLine } from 'react-icons/fa';
 
 export default function DashboardOverview() {
@@ -40,76 +41,66 @@ export default function DashboardOverview() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const headers = {
-          Authorization: `Bearer ${token}`,
-        };
+        // 1. Lấy khóa học của user hiện tại (instructor) từ courseService
+        const courses = (await courseService.getMyCourses()) || [];
+        setActiveCourses(courses);
 
-        // 1. Stats
-        const statsRes = await axios.get(
-          'http://localhost:3000/instructor/stats',
-          { headers }
+        // 2. Tạo thống kê đơn giản dựa trên dữ liệu có sẵn (backend không có /instructor/stats)
+        const totalCourses = courses.length;
+        const totalStudents = courses.reduce(
+          (acc: number, c: any) => acc + (c._count?.enrollments ?? 0),
+          0
         );
-
-        const statsData = statsRes.data;
+        const totalQuizzes = 0; // Không có nguồn dữ liệu sẵn cho số lượng quiz
+        const completionRate = Math.round(
+          (courses.reduce((acc: number, c: any) => acc + (c.progress ?? 0), 0) /
+            (courses.length || 1)) as number
+        );
 
         setStats([
           {
             id: 1,
             label: 'Tổng học viên',
-            value: statsData.totalStudents || '0',
+            value: String(totalStudents || 0),
             icon: <FaUsers size={22} />,
             color: 'bg-blue-100 text-blue-700',
           },
           {
             id: 2,
             label: 'Khóa học',
-            value: statsData.totalCourses || '0',
+            value: String(totalCourses || 0),
             icon: <FaBook size={22} />,
             color: 'bg-purple-100 text-purple-700',
           },
           {
             id: 3,
             label: 'Bài kiểm tra',
-            value: statsData.totalQuizzes || '0',
+            value: String(totalQuizzes || 0),
             icon: <FaClipboardCheck size={22} />,
             color: 'bg-yellow-100 text-yellow-700',
           },
           {
             id: 4,
             label: 'Tỉ lệ hoàn thành',
-            value: `${statsData.completionRate || 0}%`,
+            value: `${completionRate || 0}%`,
             icon: <FaChartLine size={22} />,
             color: 'bg-green-100 text-green-700',
           },
         ]);
 
-        // 2. Active Courses
-        const coursesRes = await axios.get(
-          'http://localhost:3000/instructor/courses/active',
-          { headers }
-        );
-
-        const courses = coursesRes.data || [];
-        setActiveCourses(courses);
-
-        // 3. Logs theo class (lấy lớp đầu tiên)
+        // 3. Lấy log của lớp đầu tiên (nếu có) bằng logsService
         if (courses.length > 0) {
-          const classId = courses[0].id || courses[0].clid;
-
-          const logsRes = await axios.get(
-            `http://localhost:3000/logs/class/${classId}`,
-            {
-              headers,
-              params: {
-                page: 1,
-                limit: 5,
-                action: 'submit_attempt',
-              },
-            }
-          );
-
-          setNotifications(logsRes.data.data || logsRes.data);
+          const classId = courses[0].cid;
+          if (logsService && typeof logsService.getClassLogs === 'function') {
+            const logsRes = await logsService.getClassLogs(classId, {
+              page: 1,
+              limit: 5,
+              action: 'submit_attempt',
+            });
+            setNotifications(logsRes.data || []);
+          } else {
+            console.warn('logsService.getClassLogs is not available');
+          }
         }
       } catch (error) {
         console.error('Failed to fetch dashboard data', error);

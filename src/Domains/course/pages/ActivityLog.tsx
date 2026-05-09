@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import {
   Activity,
   RefreshCw,
@@ -10,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
+import logsService, { type Log } from '../../logs/services/logs.service';
 
 // Props:
 // - classId: Có giá trị -> Log của lớp (Lecturer)
@@ -19,25 +19,19 @@ interface ActivityLogProps {
 }
 
 export default function ActivityLog({ classId }: ActivityLogProps) {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
 
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
       // Logic API: Admin xem tất cả, Lecturer xem theo lớp
-      const endpoint = classId
-        ? `http://localhost:3000/logs/class/${classId}?page=${page}&limit=20`
-        : `http://localhost:3000/logs/admin/all?page=${page}&limit=20`;
+      const res = classId
+        ? await logsService.getClassLogs(classId, { page, limit: 20 })
+        : await logsService.getAllLogs({ page, limit: 20 });
 
-      const res = await axios.get(endpoint, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const logData = Array.isArray(res.data) ? res.data : res.data.data || [];
-      setLogs(logData);
+      setLogs(res.data ?? []);
     } catch (err) {
       console.error('Failed to fetch logs', err);
     } finally {
@@ -112,7 +106,7 @@ export default function ActivityLog({ classId }: ActivityLogProps) {
                   <td className="p-4 align-top">
                     <div className="flex items-center gap-2 font-medium text-gray-800">
                       <User size={14} className="text-gray-400 shrink-0" />
-                      {log.user?.name || log.userName || 'Unknown'}
+                      {log.user?.name || log.user?.username || 'Unknown'}
                     </div>
                     <div className="text-xs text-gray-400 ml-6 font-mono mt-0.5">
                       {log.user_id || log.userId}
@@ -122,17 +116,16 @@ export default function ActivityLog({ classId }: ActivityLogProps) {
                   {/* 3. Action Badge */}
                   <td className="p-4 align-top">
                     <span
-                      className={`px-2 py-1 rounded text-xs font-bold border block w-fit ${
-                        (log.action || '').toLowerCase().includes('create')
+                      className={`px-2 py-1 rounded text-xs font-bold border block w-fit ${(log.action || '').toLowerCase().includes('create')
                           ? 'bg-green-50 text-green-700 border-green-200'
                           : (log.action || '').toLowerCase().includes('update')
                             ? 'bg-blue-50 text-blue-700 border-blue-200'
                             : (log.action || '')
-                                  .toLowerCase()
-                                  .includes('delete')
+                              .toLowerCase()
+                              .includes('delete')
                               ? 'bg-red-50 text-red-700 border-red-200'
                               : 'bg-gray-100 text-gray-600 border-gray-200'
-                      }`}
+                        }`}
                     >
                       {log.action}
                     </span>
@@ -149,7 +142,7 @@ export default function ActivityLog({ classId }: ActivityLogProps) {
                   <td className="p-4 align-top text-gray-500 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <Clock size={14} className="text-gray-400" />
-                      {new Date(log.created_at || log.createdAt).toLocaleString(
+                      {new Date(log.created_at || log.createdAt || '').toLocaleString(
                         'vi-VN'
                       )}
                     </div>

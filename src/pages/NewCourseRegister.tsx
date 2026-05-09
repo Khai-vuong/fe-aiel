@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import {
   FaArrowLeft,
   FaSpinner,
@@ -13,12 +12,13 @@ import {
   FaTrashAlt,
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import courseService from '../Domains/course/services/course.service';
 
 interface Course {
   cid: string;
   code: string;
   name: string;
-  credits: number;
+  credits?: number;
   isRegistered?: boolean;
   enrollments?: any[];
 }
@@ -34,18 +34,8 @@ export default function NewCourseRegister() {
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
-        return;
-      }
-      const response = await axios.get(
-        `http://localhost:3000/courses?t=${Date.now()}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setCourses(response.data);
+      const response = await courseService.getAllCourses();
+      setCourses(response);
       setError(null);
     } catch (err: any) {
       setError('Không thể kết nối đến máy chủ.');
@@ -62,17 +52,7 @@ export default function NewCourseRegister() {
     if (!window.confirm(`Xác nhận đăng ký môn: ${courseName}?`)) return;
     try {
       setProcessingId(cid);
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `http://localhost:3000/courses/${cid}/register`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            accept: 'application/json',
-          },
-        }
-      );
+      await courseService.registerCourse(cid);
       toast.success(`Đã đăng ký môn ${courseName}`);
       setCourses(prev =>
         prev.map(c =>
@@ -93,18 +73,7 @@ export default function NewCourseRegister() {
       return;
     try {
       setProcessingId(cid);
-      const token = localStorage.getItem('token');
-
-      await axios.post(
-        `http://localhost:3000/courses/${cid}/unregister`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            accept: 'application/json',
-          },
-        }
-      );
+      await courseService.unregisterCourse(cid);
 
       toast.warn(`Đã hủy đăng ký môn ${courseName}`);
 
@@ -208,7 +177,7 @@ export default function NewCourseRegister() {
                     <div className="mt-6 flex items-center gap-3 bg-slate-50 w-fit px-4 py-2 rounded-xl border border-slate-100 group-hover:bg-teal-50 transition-colors">
                       <FaGraduationCap className="text-[#49BBBD]" />
                       <span className="text-xs font-bold text-slate-600 uppercase tracking-tight">
-                        {course.credits} Tín chỉ
+                        {course.credits ?? 0} Tín chỉ
                       </span>
                     </div>
                   </div>
@@ -235,8 +204,8 @@ export default function NewCourseRegister() {
                       disabled={processingId === course.cid}
                       onClick={() => handleRegister(course.cid, course.name)}
                       className={`mt-10 w-full py-4 rounded-[1.5rem] font-black flex items-center justify-center gap-3 shadow-lg transition-all duration-300 active:scale-95 ${processingId === course.cid
-                          ? 'bg-gray-400 cursor-not-allowed'
-                          : 'bg-gray-900 text-white hover:bg-[#49BBBD] shadow-gray-200'
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-gray-900 text-white hover:bg-[#49BBBD] shadow-gray-200'
                         }`}
                     >
                       {processingId === course.cid ? (

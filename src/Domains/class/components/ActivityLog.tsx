@@ -1,8 +1,8 @@
 // src/Domains/class/components/ActivityLog.tsx
 
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import { Activity, RefreshCw, List, Database, User, Clock } from 'lucide-react';
+import logsService, { type Log } from '../../logs/services/logs.service';
 
 // Props: classId là tùy chọn. Nếu không có classId => Chế độ Admin (Lấy toàn bộ log)
 interface ActivityLogProps {
@@ -10,28 +10,21 @@ interface ActivityLogProps {
 }
 
 export default function ActivityLog({ classId }: ActivityLogProps) {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
 
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-
       // LOGIC QUAN TRỌNG:
       // - Có classId -> Gọi API log của lớp
       // - Không có classId -> Gọi API log toàn hệ thống (Admin)
-      const endpoint = classId
-        ? `http://localhost:3000/logs/class/${classId}?page=${page}&limit=20`
-        : `http://localhost:3000/logs/admin/all?page=${page}&limit=20`; // Endpoint cho Admin
+      const res = classId
+        ? await logsService.getClassLogs(classId, { page, limit: 20 })
+        : await logsService.getAllLogs({ page, limit: 20 });
 
-      const res = await axios.get(endpoint, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const logData = Array.isArray(res.data) ? res.data : res.data.data || [];
-      setLogs(logData);
+      setLogs(res.data ?? []);
     } catch (err) {
       console.error('Failed to fetch logs', err);
     } finally {
@@ -87,7 +80,7 @@ export default function ActivityLog({ classId }: ActivityLogProps) {
                   <td className="p-4 text-gray-500 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <Clock size={14} className="text-gray-400" />
-                      {new Date(log.created_at || log.createdAt).toLocaleString(
+                      {new Date(log.created_at || log.createdAt || '').toLocaleString(
                         'vi-VN'
                       )}
                     </div>
@@ -95,25 +88,24 @@ export default function ActivityLog({ classId }: ActivityLogProps) {
                   <td className="p-4">
                     <div className="flex items-center gap-2 font-medium text-gray-800">
                       <User size={14} className="text-gray-400" />
-                      {log.user?.name || log.userName || 'Unknown'}
+                      {log.user?.name || log.user?.username || 'Unknown'}
                     </div>
                     <div className="text-xs text-gray-400 ml-6">
-                      {log.user_id || log.userId}
+                      {log.user_id || log.userId || '-'}
                     </div>
                   </td>
                   <td className="p-4">
                     <span
-                      className={`px-2 py-1 rounded text-xs font-bold border ${
-                        (log.action || '').toLowerCase().includes('create')
+                      className={`px-2 py-1 rounded text-xs font-bold border ${(log.action || '').toLowerCase().includes('create')
                           ? 'bg-green-50 text-green-700 border-green-200'
                           : (log.action || '').toLowerCase().includes('update')
                             ? 'bg-blue-50 text-blue-700 border-blue-200'
                             : (log.action || '')
-                                  .toLowerCase()
-                                  .includes('delete')
+                              .toLowerCase()
+                              .includes('delete')
                               ? 'bg-red-50 text-red-700 border-red-200'
                               : 'bg-gray-100 text-gray-600 border-gray-200'
-                      }`}
+                        }`}
                     >
                       {log.action}
                     </span>
@@ -128,7 +120,7 @@ export default function ActivityLog({ classId }: ActivityLogProps) {
                     <td className="p-4 text-xs font-mono text-blue-600">
                       <div className="flex items-center gap-1">
                         <Database size={12} className="text-gray-400" />
-                        {log.entity_type}: {log.entity_id}
+                        {log.entity_type || log.resource_type}: {log.entity_id || log.resource_id}
                       </div>
                     </td>
                   )}

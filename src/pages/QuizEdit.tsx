@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import {
   ArrowLeft,
   Save,
@@ -13,13 +12,15 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { quizService } from '../Domains/quiz/services/quiz.service';
+import type { Quiz, QuizUpdateRequest } from '../Domains/quiz/types';
 
 // Interface cho Question
 interface Question {
-  ques_id: string;
+  ques_id?: string;
   content: string;
-  options_json: string | any;
-  points: number;
+  options_json?: string | any;
+  points?: number;
 }
 
 export default function QuizEdit() {
@@ -45,12 +46,9 @@ export default function QuizEdit() {
   useEffect(() => {
     const fetchQuizData = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(`http://localhost:3000/quizzes/${qid}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        if (!qid) return;
 
-        const quiz = res.data;
+        const quiz: Quiz = await quizService.getQuizById(qid);
 
         // Xử lý Settings JSON
         let settings: any = {};
@@ -64,7 +62,7 @@ export default function QuizEdit() {
         }
 
         // Helper format date cho input datetime-local
-        const formatDate = (dateStr: string) => {
+        const formatDate = (dateStr?: string | null) => {
           if (!dateStr) return '';
           return new Date(dateStr).toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
         };
@@ -81,7 +79,14 @@ export default function QuizEdit() {
 
         // Set danh sách câu hỏi nếu có
         if (quiz.questions && Array.isArray(quiz.questions)) {
-          setQuestions(quiz.questions);
+          setQuestions(
+            quiz.questions.map(question => ({
+              ques_id: question.ques_id,
+              content: question.content,
+              options_json: question.options_json,
+              points: question.points,
+            }))
+          );
         }
       } catch (err) {
         console.error(err);
@@ -101,13 +106,11 @@ export default function QuizEdit() {
     setSaving(true);
 
     try {
-      const token = localStorage.getItem('token');
-
-      const payload = {
+      const payload: QuizUpdateRequest = {
         name: formData.name,
         description: formData.description,
         clid: clid,
-        status: formData.status,
+        status: formData.status as QuizUpdateRequest['status'],
         available_from: formData.available_from
           ? new Date(formData.available_from).toISOString()
           : null,
@@ -121,9 +124,9 @@ export default function QuizEdit() {
         }),
       };
 
-      await axios.put(`http://localhost:3000/quizzes/${qid}`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      if (!qid) return;
+
+      await quizService.updateQuiz(qid, payload);
 
       toast.success('Cập nhật thông tin bài thi thành công!');
     } catch (err) {
@@ -138,20 +141,9 @@ export default function QuizEdit() {
   const handleDeleteQuestion = async (questionId: string) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa câu hỏi này?')) return;
 
-    try {
-      const token = localStorage.getItem('token');
-      // Gọi API xóa câu hỏi (Giả sử endpoint là DELETE /questions/:id)
-      await axios.delete(`http://localhost:3000/questions/${questionId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      // Cập nhật UI
-      setQuestions(prev => prev.filter(q => q.ques_id !== questionId));
-      toast.success('Đã xóa câu hỏi.');
-    } catch (error) {
-      console.error(error);
-      toast.error('Không thể xóa câu hỏi.');
-    }
+    // Backend hiện chưa có endpoint xóa câu hỏi, nên chỉ cập nhật UI tại client.
+    setQuestions(prev => prev.filter(q => q.ques_id !== questionId));
+    toast.success('Đã xóa câu hỏi khỏi danh sách.');
   };
 
   if (loading)
@@ -230,7 +222,7 @@ export default function QuizEdit() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1 flex items-center gap-2">
+                  <label className="text-sm font-bold text-gray-700 mb-1 flex items-center gap-2">
                     <Clock size={16} /> Thời gian làm bài (phút)
                   </label>
                   <input
@@ -268,7 +260,7 @@ export default function QuizEdit() {
               {/* Thời hạn */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1 flex items-center gap-2">
+                  <label className="text-sm font-bold text-gray-700 mb-1 flex items-center gap-2">
                     <Calendar size={16} /> Mở từ
                   </label>
                   <input
@@ -279,7 +271,7 @@ export default function QuizEdit() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1 flex items-center gap-2">
+                  <label className="text-sm font-bold text-gray-700 mb-1 flex items-center gap-2">
                     <Calendar size={16} /> Hạn chót
                   </label>
                   <input
@@ -332,7 +324,7 @@ export default function QuizEdit() {
               {questions.length > 0 ? (
                 questions.map((q, idx) => (
                   <div
-                    key={q.ques_id}
+                    key={q.ques_id ?? `${idx}`}
                     className="bg-white border border-gray-100 p-3 rounded-lg hover:shadow-md transition-shadow group relative"
                   >
                     <div className="pr-8">
@@ -344,7 +336,7 @@ export default function QuizEdit() {
                       </p>
                     </div>
                     <button
-                      onClick={() => handleDeleteQuestion(q.ques_id)}
+                      onClick={() => q.ques_id && handleDeleteQuestion(q.ques_id)}
                       className="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition-colors p-1"
                       title="Xóa câu hỏi"
                     >

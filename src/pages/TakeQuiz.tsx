@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import {
   Clock,
   ChevronLeft,
@@ -11,6 +10,9 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { attemptService } from '../Domains/quiz/services';
+import { quizService } from '../Domains/quiz/services';
+import type { Attempt, Quiz, Question as QuizQuestion } from '../Domains/quiz/types';
 
 interface Option {
   id: string;
@@ -29,13 +31,6 @@ interface QuizInfo {
   timeLimit: number;
 }
 
-interface AttemptInfo {
-  atid: string;
-  started_at: string;
-  quiz_id: string;
-  status: string;
-}
-
 export default function TakeQuiz() {
   const { atid } = useParams<{ atid: string }>();
   const navigate = useNavigate();
@@ -50,28 +45,21 @@ export default function TakeQuiz() {
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const initQuiz = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const headers = { Authorization: `Bearer ${token}` };
-
         if (!atid) return;
 
         // B1: Lấy thông tin bài làm (Attempt)
         console.log('Fetching attempt:', atid);
-        const attemptRes = await axios.get(
-          `http://localhost:3000/attempts/${atid}`,
-          { headers }
-        );
-        const attemptData: AttemptInfo = attemptRes.data;
+        const attemptData: Attempt = await attemptService.getAttemptById(atid);
 
         // Kiểm tra trạng thái
         if (
-          attemptData.status === 'completed' ||
-          attemptData.status === 'submitted'
+          attemptData.status === 'submitted' ||
+          attemptData.status === 'graded'
         ) {
           toast.info('Bài thi này đã nộp.');
           navigate(`/quiz-result/${atid}`, { replace: true });
@@ -81,11 +69,7 @@ export default function TakeQuiz() {
         // B2: Lấy thông tin Quiz và CÂU HỎI
         // (Do backend ko có module Questions riêng nên lấy qua Quiz)
         console.log('Fetching quiz:', attemptData.quiz_id);
-        const quizRes = await axios.get(
-          `http://localhost:3000/quizzes/${attemptData.quiz_id}`,
-          { headers }
-        );
-        const quizData = quizRes.data;
+        const quizData: Quiz = await quizService.getQuizById(attemptData.quiz_id);
 
         // Parse Time Limit
         let limit = 0;
@@ -95,12 +79,15 @@ export default function TakeQuiz() {
               ? JSON.parse(quizData.settings_json)
               : quizData.settings_json;
           limit = settings?.timeLimit || 0;
-        } catch (e) {}
+        } catch (e) { }
         setQuizInfo({ name: quizData.name, timeLimit: limit });
 
         // B3: Xử lý danh sách câu hỏi
         // Backend trả về câu hỏi trong mảng `questions` của quizData
-        const rawQuestions: Question[] = quizData.questions || [];
+        const rawQuestions = (quizData.questions ?? []).filter(
+          (question): question is QuizQuestion & { ques_id: string } =>
+            Boolean(question.ques_id)
+        );
         console.log('Raw Questions:', rawQuestions);
 
         const processedQuestions = rawQuestions.map(q => {
@@ -124,7 +111,7 @@ export default function TakeQuiz() {
           } catch (error) {
             console.error(`Lỗi parse option câu ${q.ques_id}`, error);
           }
-          return { ...q, parsedOptions: opts };
+          return { ...q, options_json: q.options_json ?? '', parsedOptions: opts };
         });
 
         setQuestions(processedQuestions);
@@ -137,7 +124,7 @@ export default function TakeQuiz() {
           const remainSeconds = Math.floor((endTime - now) / 1000);
 
           if (remainSeconds <= 0) {
-            handleAutoSubmit();
+            void handleAutoSubmit();
           } else {
             setTimeLeft(remainSeconds);
           }
@@ -162,7 +149,7 @@ export default function TakeQuiz() {
     if (timeLeft === null) return;
     if (timeLeft <= 0) {
       if (timerRef.current) clearInterval(timerRef.current);
-      handleAutoSubmit();
+      void handleAutoSubmit();
       return;
     }
     timerRef.current = setInterval(() => {
@@ -183,10 +170,10 @@ export default function TakeQuiz() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const handleAutoSubmit = () => {
+  const handleAutoSubmit = async () => {
     if (isSubmitting) return;
     toast.warning('Hết giờ! Đang nộp bài...');
-    handleSubmit(true);
+    await handleSubmit(true);
   };
 
   const handleSubmit = async (isAuto = false) => {
@@ -197,7 +184,6 @@ export default function TakeQuiz() {
     }
 
     setIsSubmitting(true);
-    const token = localStorage.getItem('token');
 
     try {
       const payloadAnswers = Object.entries(answers).map(([qid, oid]) => ({
@@ -205,14 +191,12 @@ export default function TakeQuiz() {
         answer_json: JSON.stringify({ selected: oid }),
       }));
 
-      const res = await axios.put(
-        `http://localhost:3000/attempts/${atid}/submit`,
-        { answers: payloadAnswers },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await attemptService.submitAttempt(atid!, {
+        answers: payloadAnswers,
+      });
 
       toast.success('Nộp bài thành công!');
-      navigate(`/quiz-result/${atid}`, { state: { result: res.data } });
+      navigate(`/quiz-result/${atid}`, { state: { result: res } });
     } catch (error: any) {
       console.error('Lỗi nộp bài:', error);
       toast.error('Nộp bài thất bại.');
@@ -270,18 +254,16 @@ export default function TakeQuiz() {
                       onClick={() =>
                         handleSelectOption(currentQuestion.ques_id, opt.id)
                       }
-                      className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex items-center gap-3 group ${
-                        isSelected
+                      className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex items-center gap-3 group ${isSelected
                           ? 'border-[#49BBBD] bg-teal-50'
                           : 'border-gray-100 hover:border-gray-300'
-                      }`}
+                        }`}
                     >
                       <div
-                        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm shrink-0 ${
-                          isSelected
+                        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm shrink-0 ${isSelected
                             ? 'border-[#49BBBD] bg-[#49BBBD] text-white'
                             : 'border-gray-300 text-gray-500'
-                        }`}
+                          }`}
                       >
                         {opt.id}
                       </div>
@@ -354,13 +336,12 @@ export default function TakeQuiz() {
                   <button
                     key={q.ques_id}
                     onClick={() => setCurrentQIndex(idx)}
-                    className={`h-9 rounded-lg text-xs font-bold transition-all ${
-                      isNow
+                    className={`h-9 rounded-lg text-xs font-bold transition-all ${isNow
                         ? 'bg-[#49BBBD] text-white'
                         : isDone
                           ? 'bg-teal-50 text-[#49BBBD] border border-[#49BBBD]'
                           : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
                     {idx + 1}
                   </button>
