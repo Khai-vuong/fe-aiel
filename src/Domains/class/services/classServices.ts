@@ -7,7 +7,7 @@ import type {
   CreateFromEnrollmentsDto,
 } from '../types';
 
-const API_BASE_URL = 'http://localhost:3000';
+const BASE_URL = import.meta.env.VITE_BASE_URL ?? 'http://localhost:3000';
 
 /**
  * Get token from localStorage
@@ -25,7 +25,7 @@ const getToken = (): string => {
  */
 export const getAllClasses = async (): Promise<Class[]> => {
   const token = getToken();
-  const res = await fetch(`${API_BASE_URL}/classes`, {
+  const res = await fetch(`${BASE_URL}/classes`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -43,7 +43,7 @@ export const getAllClasses = async (): Promise<Class[]> => {
  */
 export const getMyClasses = async (): Promise<Class[]> => {
   const token = getToken();
-  const res = await fetch(`${API_BASE_URL}/classes/me`, {
+  const res = await fetch(`${BASE_URL}/classes/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -63,7 +63,7 @@ export const getClassById = async (
   classId: string
 ): Promise<Class> => {
   const token = getToken();
-  const res = await fetch(`${API_BASE_URL}/classes/${classId}`, {
+  const res = await fetch(`${BASE_URL}/classes/${classId}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -84,7 +84,7 @@ export const updateClass = async (
   data: ClassUpdateDto
 ): Promise<Class> => {
   const token = getToken();
-  const res = await fetch(`${API_BASE_URL}/classes/${classId}`, {
+  const res = await fetch(`${BASE_URL}/classes/${classId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -107,7 +107,7 @@ export const deleteClass = async (
   classId: string
 ): Promise<void> => {
   const token = getToken();
-  const res = await fetch(`${API_BASE_URL}/classes/${classId}`, {
+  const res = await fetch(`${BASE_URL}/classes/${classId}`, {
     method: 'DELETE',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -126,7 +126,7 @@ export const createClassesFromEnrollments = async (
   data?: CreateFromEnrollmentsDto
 ): Promise<ResponseCreateClassDto[]> => {
   const token = getToken();
-  const res = await fetch(`${API_BASE_URL}/classes/createFromEnrollments`, {
+  const res = await fetch(`${BASE_URL}/classes/createFromEnrollments`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -150,7 +150,7 @@ export const addResourceToClass = async (
   data: AddResourceDto
 ): Promise<any> => {
   const token = getToken();
-  const res = await fetch(`${API_BASE_URL}/classes/addResource/${classId}`, {
+  const res = await fetch(`${BASE_URL}/classes/addResource/${classId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

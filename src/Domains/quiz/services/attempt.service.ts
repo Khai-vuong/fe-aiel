@@ -6,7 +6,7 @@ import type {
   AttemptUpdateRequest,
 } from '../types';
 
-const API_BASE_URL = 'http://localhost:3000';
+const BASE_URL = import.meta.env.VITE_BASE_URL ?? 'http://localhost:3000';
 
 class AttemptService {
   private getAuthHeader() {
@@ -21,7 +21,7 @@ class AttemptService {
    * Tao lan lam bai moi cho mot quiz (Student bat dau lam quiz)
    */
   async createAttempt(data: AttemptCreateRequest): Promise<Attempt> {
-    const response = await axios.post(`${API_BASE_URL}/attempts`, data, {
+    const response = await axios.post(`${BASE_URL}/attempts`, data, {
       headers: this.getAuthHeader(),
     });
     return response.data;
@@ -36,7 +36,7 @@ class AttemptService {
     data: AttemptSubmitRequest
   ): Promise<Attempt> {
     const response = await axios.put(
-      `${API_BASE_URL}/attempts/${attemptId}/submit`,
+      `${BASE_URL}/attempts/${attemptId}/submit`,
       data,
       {
         headers: this.getAuthHeader(),
@@ -50,7 +50,7 @@ class AttemptService {
    * Lay tat ca cac lan lam bai cua mot quiz
    */
   async getAttemptsByQuiz(qid: string): Promise<Attempt[]> {
-    const response = await axios.get(`${API_BASE_URL}/attempts/quiz/${qid}`, {
+    const response = await axios.get(`${BASE_URL}/attempts/quiz/${qid}`, {
       headers: this.getAuthHeader(),
     });
     return response.data;
@@ -65,7 +65,7 @@ class AttemptService {
     sid: string
   ): Promise<Attempt[]> {
     const response = await axios.get(
-      `${API_BASE_URL}/attempts/quiz/${qid}/student/${sid}`,
+      `${BASE_URL}/attempts/quiz/${qid}/student/${sid}`,
       {
         headers: this.getAuthHeader(),
       }

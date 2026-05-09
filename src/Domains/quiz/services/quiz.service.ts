@@ -5,7 +5,7 @@ import type {
   QuizUpdateRequest,
 } from '../types';
 
-const API_BASE_URL = 'http://localhost:3000';
+const BASE_URL = import.meta.env.VITE_BASE_URL ?? 'http://localhost:3000';
 
 class QuizService {
   private getAuthHeader() {
@@ -20,7 +20,7 @@ class QuizService {
    * Lay danh sach tat ca bai kiem tra
    */
   async getAllQuizzes(): Promise<Quiz[]> {
-    const response = await axios.get(`${API_BASE_URL}/quizzes`, {
+    const response = await axios.get(`${BASE_URL}/quizzes`, {
       headers: this.getAuthHeader(),
     });
     return response.data;
@@ -31,7 +31,7 @@ class QuizService {
    * Lay thong tin chi tiet bai kiem tra theo ID
    */
   async getQuizById(id: string): Promise<Quiz> {
-    const response = await axios.get(`${API_BASE_URL}/quizzes/${id}`, {
+    const response = await axios.get(`${BASE_URL}/quizzes/${id}`, {
       headers: this.getAuthHeader(),
     });
     return response.data;
@@ -42,7 +42,7 @@ class QuizService {
    * Lay danh sach bai kiem tra cua mot lop hoc
    */
   async getQuizzesByClass(clid: string): Promise<Quiz[]> {
-    const response = await axios.get(`${API_BASE_URL}/quizzes/class/${clid}`, {
+    const response = await axios.get(`${BASE_URL}/quizzes/class/${clid}`, {
       headers: this.getAuthHeader(),
     });
     return response.data;
@@ -53,7 +53,7 @@ class QuizService {
    * Tao bai kiem tra moi
    */
   async createQuiz(data: QuizCreateRequest): Promise<Quiz> {
-    const response = await axios.post(`${API_BASE_URL}/quizzes`, data, {
+    const response = await axios.post(`${BASE_URL}/quizzes`, data, {
       headers: this.getAuthHeader(),
     });
     return response.data;
@@ -64,7 +64,7 @@ class QuizService {
    * Cap nhat thong tin bai kiem tra
    */
   async updateQuiz(qid: string, data: QuizUpdateRequest): Promise<Quiz> {
-    const response = await axios.put(`${API_BASE_URL}/quizzes/${qid}`, data, {
+    const response = await axios.put(`${BASE_URL}/quizzes/${qid}`, data, {
       headers: this.getAuthHeader(),
     });
     return response.data;
@@ -75,7 +75,7 @@ class QuizService {
    * Xoa bai kiem tra (soft delete - chuyen sang archived)
    */
   async deleteQuiz(id: string): Promise<Quiz> {
-    const response = await axios.delete(`${API_BASE_URL}/quizzes/${id}`, {
+    const response = await axios.delete(`${BASE_URL}/quizzes/${id}`, {
       headers: this.getAuthHeader(),
     });
     return response.data;
