@@ -1,4 +1,6 @@
 export default function Homepage() {
+  const basedUrl = import.meta.env.VITE_BASE_URL ?? 'http://localhost:3000';
+
   return (
     <div className="relative bg-[#27b5ae] text-white pb-40 overflow-hidden">
       {/* Background cong */}
@@ -49,7 +51,7 @@ export default function Homepage() {
         <div className="text-3xl">✉️</div>
         <div>
           <p className="font-semibold">Congratulations</p>
-          <p className="text-gray-500 text-sm">Your admission completed</p>
+          <p className="text-gray-500 text-sm">The backend URL is {basedUrl}</p>
         </div>
       </div>
     </div>
