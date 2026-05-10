@@ -191,102 +191,104 @@ export default function Register() {
   };
 
   return (
-    <div className="w-full flex justify-center items-center min-h-screen bg-white px-10 py-6">
+    <div className="w-full flex justify-center items-center min-h-screen bg-gradient-to-br from-cyan-100 via-teal-50 to-emerald-100 px-10 py-6 relative overflow-hidden">
+      {/* Decorative blobs */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-r from-cyan-200 to-teal-200 rounded-full opacity-30 blur-3xl -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-r from-teal-200 to-emerald-200 rounded-full opacity-30 blur-3xl translate-x-1/2 translate-y-1/2 animate-pulse"></div>
+
       <ToastContainer position="top-right" autoClose={3000} />
-      <div className="max-w-6xl w-full grid grid-cols-2 gap-10">
+      <div className="max-w-6xl w-full grid grid-cols-2 gap-10 relative z-10">
         {/* LEFT IMAGE */}
         <div className="flex justify-center items-center">
-          <img src="/img/login.png" className="rounded-3xl w-[90%]" />
+          <img src="/img/login.png" className="rounded-3xl w-[90%] shadow-lg hover:shadow-2xl transition-shadow duration-300 animate-fade-in" />
         </div>
 
         {/* RIGHT FORM */}
-        <form onSubmit={handleSubmit} className="flex flex-col justify-center">
-          <h2 className="text-center text-gray-700 text-xl font-semibold mb-4">
-            Welcome to TKEDU!
+        <form onSubmit={handleSubmit} className="flex flex-col justify-center bg-white/70 backdrop-blur-xl px-10 py-10 rounded-3xl shadow-2xl border border-white/30 hover:shadow-3xl transition-shadow duration-300 animate-fade-in">
+          <h2 className="text-center text-gray-800 text-2xl font-bold mb-8 bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
+            Chào mừng đến TKEDU!
           </h2>
 
-          {/* ROLE */}
-          <div className="mb-2">
-            <label className="text-gray-700 text-sm font-medium">Select Role</label>
-            <select
-              value={role}
-              onChange={e => setRole(e.target.value)}
-              className="w-full mt-1 pl-4 pr-10 py-2 border border-[#49BBBD] rounded-full 
-                         text-black text-sm focus:ring-2 focus:ring-[#49BBBD] focus:outline-none"
-            >
-              <option value="student">Student</option>
-              <option value="lecture">Lecturer</option>
-            </select>
-          </div>
-
-          {/* EMAIL & USERNAME - TWO COLUMNS */}
+          {/* FULL NAME & USERNAME - TWO COLUMNS */}
           <div className="grid grid-cols-2 gap-3 mb-2">
             <div>
-              <label className="text-gray-700 text-sm font-medium">Email Address</label>
+              <label className="text-gray-700 text-sm font-semibold">
+                Họ và tên
+              </label>
+              <input
+                type="text"
+                placeholder="Nhập họ và tên"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                onBlur={e => handleBlur('name', e.target.value)}
+                className={`w-full mt-1 px-4 py-2 border rounded-full text-sm
+                           text-black placeholder-gray-400 bg-white/50 backdrop-blur-sm
+                           focus:outline-none focus:ring-2 focus:ring-teal-400 focus:bg-white/80 transition-all duration-200
+                           ${errors.name && touched.name ? 'border-red-500' : 'border-teal-200/50'}`}
+              />
+              {errors.name && touched.name && (
+                <p className="text-red-500 text-xs mt-0.5 ml-2">{errors.name}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="text-gray-700 text-sm font-semibold">
+                Email
+              </label>
               <input
                 type="email"
-                placeholder="Enter Email"
+                placeholder="Nhập email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 onBlur={e => handleBlur('email', e.target.value)}
                 className={`w-full mt-1 px-4 py-2 border rounded-full text-sm
-                           text-black placeholder-gray-500 focus:ring-2 focus:ring-[#49BBBD] focus:outline-none
-                           ${errors.email && touched.email ? 'border-red-500' : 'border-[#49BBBD]'}`}
+                         text-black placeholder-gray-400 bg-white/50 backdrop-blur-sm
+                         focus:outline-none focus:ring-2 focus:ring-teal-400 focus:bg-white/80 transition-all duration-200
+                         ${errors.email && touched.email ? 'border-red-500' : 'border-teal-200/50'}`}
               />
               {errors.email && touched.email && (
                 <p className="text-red-500 text-xs mt-0.5 ml-2">{errors.email}</p>
               )}
             </div>
-
-            <div>
-              <label className="text-gray-700 text-sm font-medium">User name</label>
-              <input
-                type="text"
-                placeholder="Enter Username"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                onBlur={e => handleBlur('username', e.target.value)}
-                className={`w-full mt-1 px-4 py-2 border rounded-full text-sm
-                           text-black placeholder-gray-500 focus:ring-2 focus:ring-[#49BBBD] focus:outline-none
-                           ${errors.username && touched.username ? 'border-red-500' : 'border-[#49BBBD]'}`}
-              />
-              {errors.username && touched.username && (
-                <p className="text-red-500 text-xs mt-0.5 ml-2">{errors.username}</p>
-              )}
-            </div>
           </div>
 
-          {/* FULL NAME */}
+          {/* EMAIL */}
           <div className="mb-2">
-            <label className="text-gray-700 text-sm font-medium">Full Name</label>
+            <label className="text-gray-700 text-sm font-semibold">
+              Tên đăng nhập
+            </label>
             <input
               type="text"
-              placeholder="Enter Full Name"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              onBlur={e => handleBlur('name', e.target.value)}
+              placeholder="Nhập tên đăng nhập"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              onBlur={e => handleBlur('username', e.target.value)}
               className={`w-full mt-1 px-4 py-2 border rounded-full text-sm
-                         text-black placeholder-gray-500 focus:ring-2 focus:ring-[#49BBBD] focus:outline-none
-                         ${errors.name && touched.name ? 'border-red-500' : 'border-[#49BBBD]'}`}
+                           text-black placeholder-gray-400 bg-white/50 backdrop-blur-sm
+                           focus:outline-none focus:ring-2 focus:ring-teal-400 focus:bg-white/80 transition-all duration-200
+                           ${errors.username && touched.username ? 'border-red-500' : 'border-teal-200/50'}`}
             />
-            {errors.name && touched.name && (
-              <p className="text-red-500 text-xs mt-0.5 ml-2">{errors.name}</p>
+            {errors.username && touched.username && (
+              <p className="text-red-500 text-xs mt-0.5 ml-2">{errors.username}</p>
             )}
+
+
           </div>
 
           {/* PHONE NUMBER & MAJOR - TWO COLUMNS */}
           <div className="grid grid-cols-2 gap-3 mb-2">
             <div>
-              <label className="text-gray-700 text-sm font-medium">Phone Number</label>
+              <label className="text-gray-700 text-sm font-semibold">Số điện thoại</label>
               <input
                 type="text"
-                placeholder="Enter Phone Number"
+                placeholder="Nhập số điện thoại"
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
                 onBlur={e => handleBlur('phone', e.target.value)}
                 className={`w-full mt-1 px-4 py-2 border rounded-full text-sm
-                           text-black placeholder-gray-500 focus:ring-2 focus:ring-[#49BBBD] focus:outline-none
-                           ${errors.phone && touched.phone ? 'border-red-500' : 'border-[#49BBBD]'}`}
+                           text-black placeholder-gray-400 bg-white/50 backdrop-blur-sm
+                           focus:outline-none focus:ring-2 focus:ring-teal-400 focus:bg-white/80 transition-all duration-200
+                           ${errors.phone && touched.phone ? 'border-red-500' : 'border-teal-200/50'}`}
               />
               {errors.phone && touched.phone && (
                 <p className="text-red-500 text-xs mt-0.5 ml-2">{errors.phone}</p>
@@ -295,16 +297,17 @@ export default function Register() {
 
             {role === 'student' && (
               <div>
-                <label className="text-gray-700 text-sm font-medium">Major</label>
+                <label className="text-gray-700 text-sm font-semibold">Chuyên ngành</label>
                 <input
                   type="text"
-                  placeholder="Enter Major"
+                  placeholder="Nhập chuyên ngành"
                   value={major}
                   onChange={e => setMajor(e.target.value)}
                   onBlur={e => handleBlur('major', e.target.value)}
                   className={`w-full mt-1 px-4 py-2 border rounded-full text-sm
-                             text-black placeholder-gray-500 focus:ring-2 focus:ring-[#49BBBD] focus:outline-none
-                             ${errors.major && touched.major ? 'border-red-500' : 'border-[#49BBBD]'}`}
+                             text-black placeholder-gray-400 bg-white/50 backdrop-blur-sm
+                             focus:outline-none focus:ring-2 focus:ring-teal-400 focus:bg-white/80 transition-all duration-200
+                             ${errors.major && touched.major ? 'border-red-500' : 'border-teal-200/50'}`}
                 />
                 {errors.major && touched.major && (
                   <p className="text-red-500 text-xs mt-0.5 ml-2">{errors.major}</p>
@@ -316,20 +319,23 @@ export default function Register() {
           {/* PASSWORD & CONFIRM PASSWORD - TWO COLUMNS */}
           <div className="grid grid-cols-2 gap-3 mb-2">
             <div>
-              <label className="text-gray-700 text-sm font-medium">Password</label>
+              <label className="text-gray-700 text-sm font-semibold">
+                Mật khẩu
+              </label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter Password"
+                  placeholder="Nhập mật khẩu"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   onBlur={e => handleBlur('password', e.target.value)}
                   className={`w-full mt-1 px-4 py-2 border rounded-full text-sm
-                             text-black placeholder-gray-500 focus:ring-2 focus:ring-[#49BBBD] focus:outline-none
-                             ${errors.password && touched.password ? 'border-red-500' : 'border-[#49BBBD]'}`}
+                             text-black placeholder-gray-400 bg-white/50 backdrop-blur-sm
+                             focus:outline-none focus:ring-2 focus:ring-teal-400 focus:bg-white/80 transition-all duration-200
+                             ${errors.password && touched.password ? 'border-red-500' : 'border-teal-200/50'}`}
                 />
                 <span
-                  className="absolute inset-y-0 right-4 flex items-center text-gray-600 cursor-pointer text-sm"
+                  className="absolute inset-y-0 right-4 flex items-center text-gray-600 cursor-pointer text-sm hover:text-teal-600 transition-colors"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <FaEye /> : <FaEyeSlash />}
@@ -341,20 +347,23 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="text-gray-700 text-sm font-medium">Confirm Password</label>
+              <label className="text-gray-700 text-sm font-semibold">
+                Xác nhận mật khẩu
+              </label>
               <div className="relative">
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="Re-enter Password"
+                  placeholder="Nhập lại mật khẩu"
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
                   onBlur={e => handleBlur('confirmPassword', e.target.value)}
                   className={`w-full mt-1 px-4 py-2 border rounded-full text-sm
-                             text-black placeholder-gray-500 focus:ring-2 focus:ring-[#49BBBD] focus:outline-none
-                             ${errors.confirmPassword && touched.confirmPassword ? 'border-red-500' : 'border-[#49BBBD]'}`}
+                             text-black placeholder-gray-400 bg-white/50 backdrop-blur-sm
+                             focus:outline-none focus:ring-2 focus:ring-teal-400 focus:bg-white/80 transition-all duration-200
+                             ${errors.confirmPassword && touched.confirmPassword ? 'border-red-500' : 'border-teal-200/50'}`}
                 />
                 <span
-                  className="absolute inset-y-0 right-4 flex items-center text-gray-600 cursor-pointer text-sm"
+                  className="absolute inset-y-0 right-4 flex items-center text-gray-600 cursor-pointer text-sm hover:text-teal-600 transition-colors"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? <FaEye /> : <FaEyeSlash />}
@@ -370,11 +379,13 @@ export default function Register() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2.5 mt-3 bg-[#49BBBD] text-white rounded-full 
-                             font-semibold hover:bg-[#3aa7a8] transition shadow-md hover:shadow-lg
-                             disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="w-full py-3 mt-3 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-full 
+                             font-semibold font-bold hover:from-teal-600 hover:to-emerald-600 
+                             transition-all duration-300 shadow-lg hover:shadow-xl
+                             disabled:bg-gray-400 disabled:cursor-not-allowed
+                             active:scale-95"
           >
-            {isLoading ? 'Registering...' : 'Register'}
+            {isLoading ? 'Đang đăng ký...' : 'Đăng ký'}
           </button>
         </form>
       </div>

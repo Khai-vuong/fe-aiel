@@ -67,16 +67,17 @@ export default function Header({ onToggleAiSidebar }: HeaderProps) {
               EDU<span className="text-[#49BBBD]">.</span>
             </span>
           </Link>
-
-          <button
-            type="button"
-            onClick={onToggleAiSidebar}
-            className="flex items-center gap-2 rounded-full border border-[#49BBBD]/20 bg-[#49BBBD]/10 px-4 py-2 text-sm font-semibold text-[#0f6b6c] transition-all hover:bg-[#49BBBD] hover:text-white hover:shadow-md hover:shadow-teal-100"
-            title="Mở trợ lý AI"
-          >
-            <BotMessageSquare className="w-4 h-4" />
-            <span className="hidden sm:inline">Trợ lý AI</span>
-          </button>
+          {username && (
+            <button
+              type="button"
+              onClick={onToggleAiSidebar}
+              className="flex items-center gap-2 rounded-full border border-[#49BBBD]/20 bg-[#49BBBD]/10 px-4 py-2 text-sm font-semibold text-[#0f6b6c] transition-all hover:bg-[#49BBBD] hover:text-white hover:shadow-md hover:shadow-teal-100"
+              title="Mở trợ lý AI"
+            >
+              <BotMessageSquare className="w-4 h-4" />
+              <span className="hidden sm:inline">Trợ lý AI</span>
+            </button>
+          )}
         </div>
 
         {/* MAIN MENU */}
@@ -107,7 +108,7 @@ export default function Header({ onToggleAiSidebar }: HeaderProps) {
                   to="/courses/catalog"
                   className={`${isActive('/courses/catalog')} py-1 transition-all duration-200`}
                 >
-                  Admin Panel
+                  Bảng quản trị
                 </Link>
               )}
             </>
@@ -116,13 +117,13 @@ export default function Header({ onToggleAiSidebar }: HeaderProps) {
           {!username && (
             <>
               <span className="text-gray-600 hover:text-[#49BBBD] cursor-pointer transition-colors">
-                Careers
+                Tuyển dụng
               </span>
               <span className="text-gray-600 hover:text-[#49BBBD] cursor-pointer transition-colors">
-                Blog
+                Bài viết
               </span>
               <span className="text-gray-600 hover:text-[#49BBBD] cursor-pointer transition-colors">
-                About Us
+                Về chúng tôi
               </span>
             </>
           )}
@@ -139,7 +140,7 @@ export default function Header({ onToggleAiSidebar }: HeaderProps) {
                   : 'text-gray-600 hover:text-[#49BBBD] hover:bg-gray-100'
                   }`}
               >
-                Login
+                Đăng nhập
               </Link>
               <Link
                 to="/register"
@@ -148,7 +149,7 @@ export default function Header({ onToggleAiSidebar }: HeaderProps) {
                   : 'text-gray-600 hover:text-[#49BBBD] hover:bg-gray-100'
                   }`}
               >
-                Sign Up
+                Đăng ký
               </Link>
             </div>
           ) : (
@@ -157,7 +158,7 @@ export default function Header({ onToggleAiSidebar }: HeaderProps) {
               <Link
                 to="/chat"
                 className="p-2 bg-[#49BBBD] text-white rounded-full shadow-md shadow-teal-100 hover:bg-[#3aa4a6] hover:shadow-lg transition-all"
-                title="Chat with AI"
+                title="Trò chuyện với AI"
               >
                 <BotMessageSquare className="w-5 h-5 text-white" />
               </Link>
@@ -186,7 +187,7 @@ export default function Header({ onToggleAiSidebar }: HeaderProps) {
                   </div>
                   <div className="hidden lg:block text-left">
                     <p className="text-xs text-gray-400 leading-none font-medium text-left">
-                      Welcome
+                      Xin chào
                     </p>
                     <span className="text-sm font-bold text-gray-700">
                       {username}
@@ -197,7 +198,7 @@ export default function Header({ onToggleAiSidebar }: HeaderProps) {
                 <button
                   onClick={handleLogout}
                   className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
-                  title="Logout"
+                  title="Đăng xuất"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

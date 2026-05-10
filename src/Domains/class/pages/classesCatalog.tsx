@@ -50,10 +50,14 @@ export default function ClassesCatalog() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-10">
-            <div className="max-w-7xl mx-auto px-4">
+        <div className="min-h-screen bg-gradient-to-br from-cyan-100 via-teal-50 to-emerald-100 py-10 relative overflow-hidden">
+            {/* Decorative blobs */}
+            <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-r from-cyan-200 to-teal-200 rounded-full opacity-30 blur-3xl -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
+            <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-r from-teal-200 to-emerald-200 rounded-full opacity-30 blur-3xl translate-x-1/2 translate-y-1/2 animate-pulse"></div>
+
+            <div className="max-w-7xl mx-auto px-4 relative z-10">
                 {/* Header */}
-                <div className="mb-8">
+                <div className="mb-8 bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 p-6">
                     <h1 className="text-4xl font-bold text-gray-800 mb-2">My Classes</h1>
                     <p className="text-gray-600">
                         {classes.length} {classes.length === 1 ? 'class' : 'classes'} enrolled
