@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import courseService from '@/Domains/course/services/course.service';
 import {
-  FaPlus,
   FaBook,
   FaSpinner,
   FaGraduationCap,
@@ -19,7 +17,6 @@ import {
 import { toast } from 'react-toastify';
 
 export default function CourseRegister() {
-  const navigate = useNavigate();
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');

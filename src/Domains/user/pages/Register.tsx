@@ -13,7 +13,7 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Form fields
-  const [role, setRole] = useState('student');
+  const [role] = useState('student');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [name, setName] = useState('');
