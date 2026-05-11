@@ -10,7 +10,6 @@ export default function FileAdd() {
 
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [formData, setFormData] = useState({
-        classId: clid || '',
         fileType: 'document',
         isPublic: false
     });
@@ -21,11 +20,11 @@ export default function FileAdd() {
             // Check file size (e.g., max 50MB)
             const maxSize = 50 * 1024 * 1024; // 50MB in bytes
             if (file.size > maxSize) {
-                toast.error('File size exceeds 50MB limit!');
+                toast.error('Kích thước tệp vượt quá giới hạn 50MB!');
                 return;
             }
             setSelectedFile(file);
-            toast.info(`File "${file.name}" selected`);
+            toast.info(`Đã chọn tệp "${file.name}"`);
         }
     };
 
@@ -53,12 +52,12 @@ export default function FileAdd() {
 
         // Validation
         if (!selectedFile) {
-            toast.error('Please select a file to upload!');
+            toast.error('Vui lòng chọn tệp để tải lên!');
             return;
         }
 
-        if (!formData.classId.trim()) {
-            toast.error('Class ID is required!');
+        if (!clid) {
+            toast.error('Không tìm thấy ID lớp học!');
             return;
         }
 
@@ -71,7 +70,7 @@ export default function FileAdd() {
             mime_type: selectedFile.type,
             file_type: formData.fileType,
             is_public: formData.isPublic,
-            class_id: formData.classId,
+            class_id: clid,
             uploader_id: localStorage.getItem('userId') || 'mock-user-id',
             created_at: new Date().toISOString()
         };
@@ -79,18 +78,18 @@ export default function FileAdd() {
         console.log('Uploading file:', mockFileData);
 
         // Simulate upload delay
-        toast.info('Uploading file...');
+        toast.info('Đang tải tệp lên...');
 
         setTimeout(() => {
             const success = Math.random() > 0.1; // 90% success rate for demo
 
             if (success) {
-                toast.success(`File "${selectedFile.name}" uploaded successfully!`);
+                toast.success(`Tải tệp "${selectedFile.name}" thành công!`);
                 setTimeout(() => {
                     navigate(-1);
                 }, 1500);
             } else {
-                toast.error('Upload failed! Please try again.');
+                toast.error('Tải tệp thất bại! Vui lòng thử lại.');
             }
         }, 1500);
     };
@@ -111,28 +110,31 @@ export default function FileAdd() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-3xl mx-auto px-4">
+        <div className="min-h-screen bg-gradient-to-br from-cyan-100 via-teal-50 to-emerald-100 py-8 relative overflow-hidden">
+            <div className="absolute top-20 left-10 w-72 h-72 bg-white/20 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-32 right-10 w-96 h-96 bg-white/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+
+            <div className="max-w-3xl mx-auto px-4 relative z-10">
                 {/* Header */}
-                <div className="mb-6">
+                <div className="mb-6 bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 p-6">
                     <button
                         onClick={() => navigate(-1)}
                         className="text-gray-600 hover:text-[#49BBBD] mb-4 flex items-center gap-2"
                     >
-                        ← Back
+                        ← Quay lại
                     </button>
                     <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
                         <Upload className="w-8 h-8 text-[#49BBBD]" />
-                        Upload File
+                        Tải tệp lên
                     </h1>
-                    <p className="text-gray-600 mt-2">Upload course materials, documents, or media files</p>
+                    <p className="text-gray-600 mt-2">Tải tài liệu môn học, tài liệu hoặc tệp đa phương tiện</p>
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
+                <form onSubmit={handleSubmit} className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 p-6 space-y-6">
                     {/* File Upload Section */}
                     <div className="space-y-4">
-                        <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">Select File</h2>
+                        <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">Chọn tệp</h2>
 
                         <input
                             ref={fileInputRef}
@@ -152,7 +154,7 @@ export default function FileAdd() {
                                     <div>
                                         <p className="font-medium text-gray-800">{selectedFile.name}</p>
                                         <p className="text-sm text-gray-500">
-                                            {formatFileSize(selectedFile.size)} • {selectedFile.type || 'Unknown type'}
+                                            {formatFileSize(selectedFile.size)} • {selectedFile.type || 'Không xác định'}
                                         </p>
                                     </div>
                                     <button
@@ -163,17 +165,17 @@ export default function FileAdd() {
                                         }}
                                         className="text-sm text-[#49BBBD] hover:underline"
                                     >
-                                        Change file
+                                        Đổi tệp
                                     </button>
                                 </div>
                             ) : (
                                 <div className="space-y-3">
                                     <Upload className="w-12 h-12 mx-auto text-gray-400" />
                                     <div>
-                                        <p className="text-gray-700 font-medium">Click to select a file</p>
-                                        <p className="text-sm text-gray-500">or drag and drop</p>
+                                        <p className="text-gray-700 font-medium">Bấm để chọn tệp</p>
+                                        <p className="text-sm text-gray-500">hoặc kéo thả vào đây</p>
                                     </div>
-                                    <p className="text-xs text-gray-400">Max file size: 50MB</p>
+                                    <p className="text-xs text-gray-400">Dung lượng tối đa: 50MB</p>
                                 </div>
                             )}
                         </div>
@@ -181,26 +183,11 @@ export default function FileAdd() {
 
                     {/* File Details */}
                     <div className="space-y-4">
-                        <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">File Details</h2>
+                        <h2 className="text-xl font-semibold text-gray-800 border-b pb-2">Thông tin tệp</h2>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Class ID <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="classId"
-                                value={formData.classId}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#49BBBD] focus:border-transparent outline-none"
-                                placeholder="Enter class ID"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                File Type
+                                Loại tệp
                             </label>
                             <select
                                 name="fileType"
@@ -208,13 +195,13 @@ export default function FileAdd() {
                                 onChange={handleChange}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#49BBBD] focus:border-transparent outline-none"
                             >
-                                <option value="document">Document</option>
+                                <option value="document">Tài liệu</option>
                                 <option value="video">Video</option>
-                                <option value="image">Image</option>
-                                <option value="assignment">Assignment</option>
+                                <option value="image">Hình ảnh</option>
+                                <option value="assignment">Bài tập</option>
                             </select>
                             <p className="text-sm text-gray-500 mt-1">
-                                Categorize the file for better organization
+                                Phân loại tệp để quản lý tốt hơn
                             </p>
                         </div>
 
@@ -232,19 +219,19 @@ export default function FileAdd() {
                                     {formData.isPublic ? (
                                         <>
                                             <Unlock className="w-4 h-4 text-green-600" />
-                                            Public File
+                                            Tệp công khai
                                         </>
                                     ) : (
                                         <>
                                             <Lock className="w-4 h-4 text-gray-600" />
-                                            Private File
+                                            Tệp riêng tư
                                         </>
                                     )}
                                 </label>
                                 <p className="text-xs text-gray-500 mt-1">
                                     {formData.isPublic
-                                        ? 'Anyone with the link can access this file'
-                                        : 'Only class members can access this file'}
+                                        ? 'Bất kỳ ai có liên kết đều có thể truy cập tệp này'
+                                        : 'Chỉ thành viên trong lớp mới có thể truy cập tệp này'}
                                 </p>
                             </div>
                         </div>
@@ -257,7 +244,7 @@ export default function FileAdd() {
                             onClick={() => navigate(-1)}
                             className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                         >
-                            Cancel
+                            Hủy
                         </button>
                         <button
                             type="submit"
@@ -265,37 +252,37 @@ export default function FileAdd() {
                             className="flex-1 px-6 py-3 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] transition-colors font-medium flex items-center justify-center gap-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
                         >
                             <FileCheck className="w-5 h-5" />
-                            Upload File
+                            Tải tệp lên
                         </button>
                     </div>
                 </form>
 
                 {/* Info Box */}
-                <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="mt-6 bg-white/70 backdrop-blur-xl border border-white/30 rounded-3xl p-4">
                     <p className="text-sm text-blue-800">
-                        <strong>Note:</strong> This is a mock upload form. No files are actually uploaded to a server.
+                        <strong>Lưu ý:</strong> Đây là form tải tệp giả lập. Tệp không được tải lên máy chủ thật.
                     </p>
                 </div>
 
                 {/* File Info Display */}
                 {selectedFile && (
-                    <div className="mt-6 bg-white rounded-lg shadow-md p-4">
-                        <h3 className="font-semibold text-gray-800 mb-3">File Information</h3>
+                    <div className="mt-6 bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 p-4">
+                        <h3 className="font-semibold text-gray-800 mb-3">Thông tin tệp</h3>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
-                                <span className="text-gray-600">Filename:</span>
+                                <span className="text-gray-600">Tên tệp:</span>
                                 <span className="font-medium">{selectedFile.name}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-600">Size:</span>
+                                <span className="text-gray-600">Dung lượng:</span>
                                 <span className="font-medium">{formatFileSize(selectedFile.size)}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-600">MIME Type:</span>
+                                <span className="text-gray-600">Loại MIME:</span>
                                 <span className="font-medium">{selectedFile.type || 'N/A'}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-600">Last Modified:</span>
+                                <span className="text-gray-600">Chỉnh sửa lần cuối:</span>
                                 <span className="font-medium">
                                     {new Date(selectedFile.lastModified).toLocaleDateString()}
                                 </span>

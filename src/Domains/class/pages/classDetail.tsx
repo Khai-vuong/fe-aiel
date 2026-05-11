@@ -96,10 +96,14 @@ export default function ClassDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-100 via-teal-50 to-emerald-100 py-8 relative overflow-hidden">
+      {/* Decorative Blobs */}
+      <div className="absolute top-20 left-10 w-72 h-72 bg-white/20 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-32 right-10 w-96 h-96 bg-white/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
         {/* ===== HEADER ===== */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 p-6 mb-6">
           <div className="flex items-start justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-800 mb-2">
@@ -118,7 +122,7 @@ export default function ClassDetail() {
                   onClick={() => navigate(`/class/${classData.clid}/logs`)}
                 >
                   <Activity size={18} />
-                  View Logs
+                  Logs hệ thống
                 </button>
 
                 {/* 2. Nút Class Monitor */}
@@ -126,7 +130,7 @@ export default function ClassDetail() {
                   className="px-4 py-2 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] font-medium"
                   onClick={() => navigate(`/class/${classData.clid}/monitor`)}
                 >
-                  Class Monitor
+                  Danh sách sinh viên
                 </button>
 
                 {/* 3. Nút Edit Class */}
@@ -138,7 +142,7 @@ export default function ClassDetail() {
                     })
                   }
                 >
-                  Edit Class
+                  Sửa thông tin lớp
                 </button>
               </div>
             )}
@@ -153,7 +157,7 @@ export default function ClassDetail() {
               >
                 <div className="flex items-center gap-2">
                   <BookOpen className="w-5 h-5 text-[#49BBBD]" />
-                  <h3 className="font-semibold text-lg">Class Information</h3>
+                  <h3 className="font-semibold text-lg">Thông tin lớp</h3>
                 </div>
                 {isCourseInfoOpen ? (
                   <ChevronUp className="text-gray-500" />
@@ -168,11 +172,11 @@ export default function ClassDetail() {
                 <div className="ml-7 space-y-4">
                   <div className="grid grid-cols-2 gap-4 pt-2">
                     <div>
-                      <p className="text-sm text-gray-500">Course Name</p>
+                      <p className="text-sm text-gray-500">Tên môn học</p>
                       <p className="font-medium">{classData.course.name}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Course Code</p>
+                      <p className="text-sm text-gray-500">Mã môn học</p>
                       <p className="font-medium">{classData.course.code}</p>
                     </div>
                   </div>
@@ -180,7 +184,7 @@ export default function ClassDetail() {
                     <div className="flex items-start gap-3">
                       <Clock className="w-5 h-5 text-gray-500 mt-1" />
                       <div>
-                        <p className="text-sm text-gray-500">Schedule</p>
+                        <p className="text-sm text-gray-500">Thời khóa biểu</p>
                         <p className="font-medium">{getScheduleText()}</p>
                       </div>
                     </div>
@@ -188,7 +192,7 @@ export default function ClassDetail() {
                       <div className="flex items-start gap-3">
                         <MapPin className="w-5 h-5 text-gray-500 mt-1" />
                         <div>
-                          <p className="text-sm text-gray-500">Location</p>
+                          <p className="text-sm text-gray-500">Phòng học</p>
                           <p className="font-medium">{classData.location}</p>
                         </div>
                       </div>
@@ -199,7 +203,7 @@ export default function ClassDetail() {
                       <div className="flex items-start gap-3">
                         <Users className="w-5 h-5 text-gray-500 mt-1" />
                         <div>
-                          <p className="text-sm text-gray-500">Instructor</p>
+                          <p className="text-sm text-gray-500">Giảng viên</p>
                           <p className="font-medium text-lg">
                             {classData.lecturer.name}
                           </p>
@@ -214,7 +218,7 @@ export default function ClassDetail() {
         </div>
 
         {/* ===== TABS ===== */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 overflow-hidden">
           <div className="flex border-b">
             <button
               onClick={() => setActiveTab('files')}
@@ -277,9 +281,10 @@ export default function ClassDetail() {
                         href={file.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-4 py-2 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0]"
+                        className="px-4 py-2 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] no-underline !text-white !visited:text-white"
+                        style={{ color: 'white' }}
                       >
-                        Download
+                        Tải tài liệu
                       </a>
                     </div>
                   ))

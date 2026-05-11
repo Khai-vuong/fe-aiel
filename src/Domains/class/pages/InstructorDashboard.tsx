@@ -17,7 +17,7 @@ import DashboardOverview from '@/components/DashboardOverview';
 export default function InstructorDashboard() {
   const navigate = useNavigate();
   const { clid } = useParams<{ clid: string }>();
-  const [activeSection, setActiveSection] = useState('Overview');
+  const [activeSection] = useState('Students');
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [notificationForm, setNotificationForm] = useState({
     title: '',
@@ -94,24 +94,37 @@ export default function InstructorDashboard() {
   )?.component;
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA]">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-100 via-teal-50 to-emerald-100 relative overflow-hidden">
+      <div className="absolute top-20 left-10 w-72 h-72 bg-white/20 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-32 right-10 w-96 h-96 bg-white/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+
       {/* MAIN CONTENT */}
-      <div className="w-full">
+      <div className="w-full relative z-10">
         {/* Header */}
-        <header className="bg-white shadow-sm p-4 border-b border-gray-200 sticky top-0 z-10">
-          <div className="flex items-center gap-4">
+        <header className="bg-white/70 backdrop-blur-xl shadow-sm p-4 border-b border-white/30 sticky top-0 z-20">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="text-gray-600 hover:text-[#49BBBD] flex items-center gap-2 font-medium"
+              >
+                ← Back
+              </button>
+              <h1 className="text-2xl font-bold text-gray-800">
+                {navItems.find(item => item.id === activeSection)?.label}
+              </h1>
+            </div>
+
             <button
-              onClick={() => navigate(-1)}
-              className="text-gray-600 hover:text-[#49BBBD] flex items-center gap-2 font-medium"
+              onClick={() => setShowNotificationModal(true)}
+              className="flex items-center px-4 py-2 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3aa4a6] transition duration-200 shadow-md"
             >
-              ← Back
+              <FaBell className="mr-2" size={16} />
+              <span className="font-medium text-sm">Thông báo</span>
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">
-              {navItems.find(item => item.id === activeSection)?.label}
-            </h1>
           </div>
 
-          {/* Tab Navigation */}
+          {/*
           <div className="flex justify-between items-center mt-4 gap-4">
             <div className="flex gap-2 flex-wrap">
               {navItems.map(item => (
@@ -130,14 +143,6 @@ export default function InstructorDashboard() {
             </div>
 
             <div className="flex gap-2">
-              <button
-                onClick={() => setShowNotificationModal(true)}
-                className="flex items-center px-4 py-2 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3aa4a6] transition duration-200 shadow-md"
-              >
-                <FaBell className="mr-2" size={16} />
-                <span className="font-medium text-sm">Thông báo</span>
-              </button>
-
               <button
                 onClick={() => console.log('Export clicked')}
                 className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200 shadow-md"
@@ -160,6 +165,7 @@ export default function InstructorDashboard() {
               </button>
             </div>
           </div>
+          */}
         </header>
 
         {/* Render Component */}
@@ -168,27 +174,27 @@ export default function InstructorDashboard() {
 
       {/* Modal Thông báo */}
       {showNotificationModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-fadeIn">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-[#49BBBD] text-white">
+        <div className="fixed inset-0 bg-white/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/30 w-full max-w-2xl overflow-hidden animate-fadeIn">
+            <div className="px-6 py-4 border-b border-white/30 flex justify-between items-center bg-white/40 backdrop-blur-xl text-gray-800">
               <h3 className="font-bold text-lg flex items-center gap-2">
-                <FaBell /> Gửi thông báo cho lớp học
+                <FaBell className="text-[#49BBBD]" /> Gửi thông báo cho lớp học
               </h3>
               <button
                 onClick={() => setShowNotificationModal(false)}
-                className="hover:bg-white/20 p-1 rounded-full transition"
+                className="hover:bg-white/40 p-1 rounded-full transition"
                 disabled={sending}
               >
-                <FaTimes />
+                <FaTimes className="text-gray-600" />
               </button>
             </div>
 
             <form onSubmit={handleSendNotification} className="p-6 space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                <p className="text-sm text-blue-800">
+              <div className="bg-white/50 backdrop-blur-sm border border-white/30 rounded-2xl p-3 mb-4 shadow-sm">
+                <p className="text-sm text-gray-800">
                   <span className="font-semibold">Lớp học:</span> {clid || 'Không xác định'}
                 </p>
-                <p className="text-xs text-blue-600 mt-1">
+                <p className="text-xs text-gray-600 mt-1">
                   Thông báo sẽ được gửi cho tất cả học sinh trong lớp này
                 </p>
               </div>
@@ -199,7 +205,7 @@ export default function InstructorDashboard() {
                 </label>
                 <input
                   type="text"
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#49BBBD] outline-none"
+                  className="w-full px-4 py-2 bg-white/70 backdrop-blur-sm border border-white/40 rounded-xl focus:ring-2 focus:ring-[#49BBBD] outline-none"
                   placeholder="Ví dụ: Thông báo nghỉ học..."
                   value={notificationForm.title}
                   onChange={e =>
@@ -215,7 +221,7 @@ export default function InstructorDashboard() {
                   Nội dung <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#49BBBD] outline-none"
+                  className="w-full px-4 py-2 bg-white/70 backdrop-blur-sm border border-white/40 rounded-xl focus:ring-2 focus:ring-[#49BBBD] outline-none"
                   rows={4}
                   placeholder="Nhập nội dung chi tiết thông báo..."
                   value={notificationForm.message}
@@ -233,7 +239,7 @@ export default function InstructorDashboard() {
                     Loại thông báo
                   </label>
                   <select
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#49BBBD] outline-none bg-white"
+                    className="w-full px-4 py-2 bg-white/70 backdrop-blur-sm border border-white/40 rounded-xl focus:ring-2 focus:ring-[#49BBBD] outline-none"
                     value={notificationForm.type}
                     onChange={e =>
                       setNotificationForm({ ...notificationForm, type: e.target.value })
@@ -253,7 +259,7 @@ export default function InstructorDashboard() {
                     Related Type
                   </label>
                   <select
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#49BBBD] outline-none bg-white"
+                    className="w-full px-4 py-2 bg-white/70 backdrop-blur-sm border border-white/40 rounded-xl focus:ring-2 focus:ring-[#49BBBD] outline-none"
                     value={notificationForm.related_type}
                     onChange={e =>
                       setNotificationForm({ ...notificationForm, related_type: e.target.value })
@@ -268,27 +274,11 @@ export default function InstructorDashboard() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Related ID (Optional)
-                </label>
-                <input
-                  type="text"
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#49BBBD] outline-none"
-                  placeholder="ID tài nguyên liên quan (mặc định là Class ID)"
-                  value={notificationForm.related_id}
-                  onChange={e =>
-                    setNotificationForm({ ...notificationForm, related_id: e.target.value })
-                  }
-                  disabled={sending}
-                />
-              </div>
-
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={() => setShowNotificationModal(false)}
-                  className="px-5 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition"
+                  className="px-5 py-2 text-gray-700 bg-white/60 hover:bg-white/80 rounded-lg font-medium transition border border-white/30"
                   disabled={sending}
                 >
                   Hủy

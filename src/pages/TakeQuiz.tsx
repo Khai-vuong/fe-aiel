@@ -215,9 +215,12 @@ export default function TakeQuiz() {
   const currentQuestion = questions[currentQIndex];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-100 via-teal-50 to-emerald-100 flex flex-col font-sans relative overflow-hidden">
+      {/* Decorative Blobs */}
+      <div className="absolute top-20 left-10 w-72 h-72 bg-white/20 rounded-full blur-3xl animate-pulse pointer-events-none"></div>
+      <div className="absolute bottom-32 right-10 w-96 h-96 bg-white/15 rounded-full blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: '2s' }}></div>
       {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-20 border-b px-4 h-16 flex items-center justify-between">
+      <div className="bg-white/70 backdrop-blur-xl shadow-sm sticky top-0 z-20 border-b border-white/30 px-4 h-16 flex items-center justify-between">
         <h1 className="font-bold text-gray-800 truncate max-w-[60%]">
           {quizInfo?.name || 'Làm bài thi'}
         </h1>
@@ -231,11 +234,11 @@ export default function TakeQuiz() {
       </div>
 
       {/* Body */}
-      <div className="max-w-7xl mx-auto w-full flex-1 p-4 flex flex-col md:flex-row gap-6">
+      <div className="max-w-7xl mx-auto w-full flex-1 p-4 flex flex-col md:flex-row gap-6 relative z-10">
         {/* Câu hỏi */}
         <div className="flex-1 flex flex-col">
           {currentQuestion ? (
-            <div className="bg-white rounded-2xl shadow-sm border p-6 md:p-8 flex-1">
+            <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 p-6 md:p-8 flex-1">
               <div className="mb-6 flex justify-between items-start">
                 <span className="text-[#49BBBD] font-bold text-sm bg-teal-50 px-3 py-1 rounded-full border border-teal-100">
                   Câu {currentQIndex + 1} / {questions.length}
@@ -255,14 +258,14 @@ export default function TakeQuiz() {
                         handleSelectOption(currentQuestion.ques_id, opt.id)
                       }
                       className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex items-center gap-3 group ${isSelected
-                          ? 'border-[#49BBBD] bg-teal-50'
-                          : 'border-gray-100 hover:border-gray-300'
+                        ? 'border-[#49BBBD] bg-teal-50'
+                        : 'border-gray-100 hover:border-gray-300'
                         }`}
                     >
                       <div
                         className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm shrink-0 ${isSelected
-                            ? 'border-[#49BBBD] bg-[#49BBBD] text-white'
-                            : 'border-gray-300 text-gray-500'
+                          ? 'border-[#49BBBD] bg-[#49BBBD] text-white'
+                          : 'border-gray-300 text-gray-500'
                           }`}
                       >
                         {opt.id}
@@ -282,7 +285,7 @@ export default function TakeQuiz() {
               </div>
             </div>
           ) : (
-            <div className="bg-white p-10 text-center text-gray-500 rounded-xl border border-dashed border-gray-300">
+            <div className="bg-white/70 backdrop-blur-xl p-10 text-center text-gray-500 rounded-3xl border border-dashed border-white/30">
               <AlertTriangle
                 className="mx-auto mb-2 text-yellow-500"
                 size={32}
@@ -324,7 +327,7 @@ export default function TakeQuiz() {
 
         {/* Sidebar */}
         <div className="w-full md:w-72 shrink-0">
-          <div className="bg-white rounded-2xl shadow-sm border p-5 sticky top-24">
+          <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 p-5 sticky top-24">
             <div className="flex items-center gap-2 font-bold text-gray-700 mb-4">
               <Menu size={20} /> Danh sách câu
             </div>
@@ -337,10 +340,10 @@ export default function TakeQuiz() {
                     key={q.ques_id}
                     onClick={() => setCurrentQIndex(idx)}
                     className={`h-9 rounded-lg text-xs font-bold transition-all ${isNow
-                        ? 'bg-[#49BBBD] text-white'
-                        : isDone
-                          ? 'bg-teal-50 text-[#49BBBD] border border-[#49BBBD]'
-                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                      ? 'bg-[#49BBBD] text-white'
+                      : isDone
+                        ? 'bg-teal-50 text-[#49BBBD] border border-[#49BBBD]'
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                       }`}
                   >
                     {idx + 1}

@@ -102,9 +102,13 @@ export default function NotificationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-100 via-teal-50 to-emerald-100 py-8 px-4 relative overflow-hidden">
+      {/* Decorative blobs */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-r from-cyan-200 to-teal-200 rounded-full opacity-30 blur-3xl -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-r from-teal-200 to-emerald-200 rounded-full opacity-30 blur-3xl translate-x-1/2 translate-y-1/2 animate-pulse"></div>
+
       <ToastContainer />
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto relative z-10">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
@@ -128,7 +132,7 @@ export default function NotificationPage() {
         </div>
 
         {/* Toolbar & Filter */}
-        <div className="bg-white p-4 rounded-xl shadow-sm mb-4 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="bg-white/70 backdrop-blur-xl border border-white/30 p-4 rounded-xl shadow-lg mb-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex gap-2">
             <button
               onClick={() => setFilter('ALL')}
@@ -149,14 +153,14 @@ export default function NotificationPage() {
         <div className="space-y-3">
           {loading ? (
             [...Array(3)].map((_, i) => (
-              <div key={i} className="bg-white p-5 rounded-xl border border-gray-100 animate-pulse">
+              <div key={i} className="bg-white/70 backdrop-blur-xl border border-white/30 p-5 rounded-xl animate-pulse">
                 <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
                 <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
                 <div className="h-3 bg-gray-200 rounded w-full"></div>
               </div>
             ))
           ) : notifications.length === 0 ? (
-            <div className="text-center py-16 text-gray-500 bg-white rounded-xl">
+            <div className="text-center py-16 text-gray-500 bg-white/70 backdrop-blur-xl border border-white/30 rounded-xl shadow-lg">
               <FaBell size={48} className="mx-auto mb-4 opacity-20" />
               <p className="text-lg font-medium">Không có thông báo nào</p>
               <p className="text-sm mt-1">Bạn chưa nhận được thông báo nào</p>
@@ -166,9 +170,9 @@ export default function NotificationPage() {
               <div
                 key={notif.nid}
                 onClick={() => !notif.is_read && handleMarkAsRead(notif.nid)}
-                className={`group relative p-5 rounded-xl border transition-all duration-200 cursor-pointer ${notif.is_read
-                  ? 'bg-white border-gray-100 hover:border-gray-200'
-                  : 'bg-white border-l-4 border-l-[#49BBBD] shadow-md hover:shadow-lg'
+                className={`group relative p-5 rounded-xl border transition-all duration-200 cursor-pointer backdrop-blur-sm ${notif.is_read
+                  ? 'bg-white/60 border border-white/30 hover:shadow-md'
+                  : 'bg-white/70 border-l-4 border-l-[#49BBBD] shadow-md hover:shadow-lg'
                   }`}
               >
                 <div className="flex justify-between items-start">

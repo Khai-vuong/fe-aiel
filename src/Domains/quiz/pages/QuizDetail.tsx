@@ -149,8 +149,12 @@ export default function QuizDetail() {
     );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-100 via-teal-50 to-emerald-100 py-8 px-4 relative overflow-hidden">
+      {/* Decorative Blobs */}
+      <div className="absolute top-20 left-10 w-72 h-72 bg-white/20 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-32 right-10 w-96 h-96 bg-white/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+
+      <div className="max-w-4xl mx-auto relative z-10">
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-gray-500 hover:text-[#49BBBD] mb-6 transition-colors"
@@ -158,7 +162,7 @@ export default function QuizDetail() {
           <ArrowLeft size={20} /> Quay lại danh sách
         </button>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 overflow-hidden">
           {/* Header */}
           <div className="bg-[#49BBBD] p-8 text-white">
             <h1 className="text-3xl font-bold mb-2">{quizName}</h1>
@@ -234,8 +238,8 @@ export default function QuizDetail() {
                           }
                         }}
                         className={`border-b border-gray-50 transition-colors ${att.status === 'submitted' || att.status === 'graded'
-                            ? 'hover:bg-teal-50 cursor-pointer'
-                            : 'hover:bg-gray-50'
+                          ? 'hover:bg-teal-50 cursor-pointer'
+                          : 'hover:bg-gray-50'
                           }`}
                       >
                         <td className="py-4 font-bold text-[#49BBBD]">

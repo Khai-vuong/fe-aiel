@@ -154,8 +154,12 @@ export default function QuizEdit() {
     );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-100 via-teal-50 to-emerald-100 py-8 px-4 relative overflow-hidden">
+      {/* Decorative Blobs */}
+      <div className="absolute top-20 left-10 w-72 h-72 bg-white/20 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-32 right-10 w-96 h-96 bg-white/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+
+      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
         {/* --- CỘT TRÁI: Form Sửa Thông Tin Chung --- */}
         <div className="lg:col-span-2">
           <button
@@ -165,7 +169,7 @@ export default function QuizEdit() {
             <ArrowLeft size={20} /> Quay lại
           </button>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 overflow-hidden">
             <div className="bg-[#49BBBD] p-6 text-white flex items-center gap-3">
               <Settings size={24} />
               <h1 className="text-xl font-bold">Cài đặt bài thi</h1>
@@ -303,7 +307,7 @@ export default function QuizEdit() {
 
         {/* --- CỘT PHẢI: Danh sách câu hỏi --- */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden sticky top-6">
+          <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 overflow-hidden sticky top-6">
             <div className="p-5 border-b bg-gray-50 flex justify-between items-center">
               <h2 className="font-bold text-gray-800 flex items-center gap-2">
                 <HelpCircle size={20} className="text-[#49BBBD]" />

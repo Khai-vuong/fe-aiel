@@ -28,7 +28,7 @@ export default function EditClass() {
 
     useEffect(() => {
         if (!classData) {
-            toast.error('No class data provided. Redirecting...');
+            toast.error('Không có dữ liệu lớp học. Đang chuyển hướng...');
             setTimeout(() => navigate(-1), 2000);
             return;
         }
@@ -97,14 +97,14 @@ export default function EditClass() {
             };
 
             await updateClass(classData.clid, updateData);
-            toast.success('Class updated successfully!');
+            toast.success('Cập nhật lớp học thành công!');
 
             setTimeout(() => {
                 navigate(-1); // Go back to previous page
             }, 1500);
         } catch (error) {
             console.error('Error updating class:', error);
-            toast.error(error instanceof Error ? error.message : 'Failed to update class');
+            toast.error(error instanceof Error ? error.message : 'Không thể cập nhật lớp học');
         } finally {
             setIsLoading(false);
         }
@@ -117,34 +117,35 @@ export default function EditClass() {
     if (!classData) {
         return (
             <div className="flex justify-center items-center min-h-screen">
-                <p className="text-gray-600">Loading...</p>
+                <p className="text-gray-600">Đang tải...</p>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8 px-4">
+        <div className="min-h-screen bg-gradient-to-br from-cyan-100 via-teal-50 to-emerald-100 py-8 px-4 relative overflow-hidden">
+            <div className="absolute top-20 left-10 w-72 h-72 bg-white/20 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-32 right-10 w-96 h-96 bg-white/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+
             <ToastContainer position="top-right" autoClose={3000} />
 
-            <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-8">
+            <div className="max-w-4xl mx-auto relative z-10 bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 p-8">
                 <div className="mb-6">
                     <button
                         onClick={() => navigate(-1)}
                         className="text-gray-600 hover:text-[#49BBBD] mb-4 flex items-center gap-2"
                     >
-                        ← Back
+                        ← Quay lại
                     </button>
-                    <h1 className="text-3xl font-bold text-gray-800">Edit Class Information</h1>
-                    <p className="text-gray-600 mt-2">
-                        Update the details for class: <span className="font-semibold">{classData.class_name}</span>
-                    </p>
+                    <h1 className="text-3xl font-bold text-gray-800">Sửa thông tin lớp</h1>
+
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Class Name */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Class Name <span className="text-red-500">*</span>
+                            Tên lớp <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
@@ -153,19 +154,19 @@ export default function EditClass() {
                             onChange={handleInputChange}
                             required
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#49BBBD] focus:border-transparent"
-                            placeholder="e.g., CS101 - L1"
+                            placeholder="VD: CS101 - L1"
                         />
                     </div>
 
                     {/* Schedule Section */}
-                    <div className="border border-gray-200 rounded-lg p-4">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Schedule</h3>
+                    <div className="border border-white/30 bg-white/50 backdrop-blur-sm rounded-2xl p-4">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Lịch học</h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {/* Day */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Day of Week
+                                    Thứ
                                 </label>
                                 <select
                                     name="day"
@@ -173,21 +174,21 @@ export default function EditClass() {
                                     onChange={handleScheduleChange}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#49BBBD] focus:border-transparent"
                                 >
-                                    <option value="">Select Day</option>
-                                    <option value="Monday">Monday</option>
-                                    <option value="Tuesday">Tuesday</option>
-                                    <option value="Wednesday">Wednesday</option>
-                                    <option value="Thursday">Thursday</option>
-                                    <option value="Friday">Friday</option>
-                                    <option value="Saturday">Saturday</option>
-                                    <option value="Sunday">Sunday</option>
+                                    <option value="">Chọn thứ</option>
+                                    <option value="Monday">Thứ Hai</option>
+                                    <option value="Tuesday">Thứ Ba</option>
+                                    <option value="Wednesday">Thứ Tư</option>
+                                    <option value="Thursday">Thứ Năm</option>
+                                    <option value="Friday">Thứ Sáu</option>
+                                    <option value="Saturday">Thứ Bảy</option>
+                                    <option value="Sunday">Chủ Nhật</option>
                                 </select>
                             </div>
 
                             {/* Start Time */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Start Time
+                                    Giờ bắt đầu
                                 </label>
                                 <input
                                     type="time"
@@ -201,7 +202,7 @@ export default function EditClass() {
                             {/* End Time */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    End Time
+                                    Giờ kết thúc
                                 </label>
                                 <input
                                     type="time"
@@ -217,7 +218,7 @@ export default function EditClass() {
                     {/* Location */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Location
+                            Địa điểm
                         </label>
                         <input
                             type="text"
@@ -225,14 +226,14 @@ export default function EditClass() {
                             value={formData.location}
                             onChange={handleInputChange}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#49BBBD] focus:border-transparent"
-                            placeholder="e.g., Science Building - Room 205"
+                            placeholder="VD: Tòa nhà Khoa học - Phòng 205"
                         />
                     </div>
 
                     {/* Status */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Status <span className="text-red-500">*</span>
+                            Trạng thái <span className="text-red-500">*</span>
                         </label>
                         <select
                             name="status"
@@ -241,25 +242,10 @@ export default function EditClass() {
                             required
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#49BBBD] focus:border-transparent"
                         >
-                            <option value="Active">Active</option>
-                            <option value="Completed">Completed</option>
-                            <option value="Cancelled">Cancelled</option>
+                            <option value="Active">Đang hoạt động</option>
+                            <option value="Completed">Đã hoàn thành</option>
+                            <option value="Cancelled">Đã hủy</option>
                         </select>
-                    </div>
-
-                    {/* Lecturer ID */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Lecturer ID
-                        </label>
-                        <input
-                            type="text"
-                            name="lecturer_id"
-                            value={formData.lecturer_id}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#49BBBD] focus:border-transparent"
-                            placeholder="e.g., lecturer002"
-                        />
                     </div>
 
                     {/* Action Buttons */}
@@ -274,7 +260,7 @@ export default function EditClass() {
                 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
               `}
                         >
-                            {isLoading ? 'Updating...' : 'Update Class'}
+                            {isLoading ? 'Đang cập nhật...' : 'Cập nhật lớp'}
                         </button>
 
                         <button
@@ -287,7 +273,7 @@ export default function EditClass() {
                 hover:bg-gray-400 transition shadow-md
               "
                         >
-                            Cancel
+                            Hủy
                         </button>
                     </div>
                 </form>

@@ -12,6 +12,9 @@ import {
   FaSearch,
   FaChalkboardTeacher,
   FaCalendarAlt,
+  FaCheckCircle,
+  FaTrashAlt,
+  FaPlusCircle,
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
@@ -23,6 +26,7 @@ export default function CourseRegister() {
   const [activeTab, setActiveTab] = useState<'all' | 'registered'>('all');
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const [isModalLoading, setIsModalLoading] = useState(false);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   const fetchCourses = useCallback(async () => {
     try {
@@ -51,6 +55,48 @@ export default function CourseRegister() {
       setSelectedCourse(null);
     } finally {
       setIsModalLoading(false);
+    }
+  };
+
+  const handleRegister = async (cid: string, courseName: string) => {
+    if (!window.confirm(`Xác nhận đăng ký môn: ${courseName}?`)) return;
+    try {
+      setProcessingId(cid);
+      await courseService.registerCourse(cid);
+      toast.success(`Đã đăng ký môn ${courseName}`);
+
+      setSelectedCourse((prev: any) => ({
+        ...prev,
+        isRegistered: true,
+        enrollments: [{}]
+      }));
+
+      fetchCourses();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Lỗi đăng ký');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleUnregister = async (cid: string, courseName: string) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn HỦY đăng ký môn: ${courseName}?`)) return;
+    try {
+      setProcessingId(cid);
+      await courseService.unregisterCourse(cid);
+      toast.warn(`Đã hủy đăng ký môn ${courseName}`);
+
+      setSelectedCourse((prev: any) => ({
+        ...prev,
+        isRegistered: false,
+        enrollments: []
+      }));
+
+      fetchCourses();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Không thể hủy đăng ký lúc này');
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -86,22 +132,14 @@ export default function CourseRegister() {
               Tất cả môn
             </button>
           </div>
-          <div className="flex items-center gap-4 w-full md:w-auto">
-            <div className="relative w-full md:w-80">
-              <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Tìm mã hoặc tên môn..."
-                className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-[#49BBBD]/50"
-                onChange={e => setSearchText(e.target.value)}
-              />
-            </div>
-            <button
-              onClick={() => navigate('/courses/new')}
-              className="bg-[#49BBBD] text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 hover:bg-[#3aa4a6] transition-all shadow-md active:scale-95"
-            >
-              <FaPlus /> <span>Đăng ký mới</span>
-            </button>
+          <div className="relative w-full">
+            <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Tìm mã hoặc tên môn..."
+              className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-[#49BBBD]/50"
+              onChange={e => setSearchText(e.target.value)}
+            />
           </div>
         </div>
 
@@ -183,6 +221,21 @@ export default function CourseRegister() {
                 </div>
               ) : (
                 <div className="space-y-8 text-left">
+                  {/* Registration Status Badge */}
+                  {(() => {
+                    const isAlreadyRegistered = selectedCourse?.isRegistered ||
+                      (selectedCourse?.enrollments && selectedCourse.enrollments.length > 0);
+                    if (isAlreadyRegistered) {
+                      return (
+                        <div className="p-4 bg-green-50 border border-green-200 rounded-2xl flex items-center gap-3">
+                          <FaCheckCircle className="text-green-500 text-xl" />
+                          <span className="font-bold text-green-700 uppercase text-sm tracking-wide">Bạn đã đăng ký môn này</span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
                   {/* Grid Bento Info */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="p-5 bg-blue-50 rounded-3xl border border-blue-100 flex items-center gap-4">
@@ -332,13 +385,52 @@ export default function CourseRegister() {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-8 border-t border-gray-100 bg-gray-50/50 flex justify-end">
+            <div className="p-8 border-t border-gray-100 bg-gray-50/50 flex justify-between items-center gap-4">
               <button
                 onClick={() => setSelectedCourse(null)}
-                className="px-10 py-4 bg-gray-900 text-white rounded-2xl font-black hover:bg-black transition-all shadow-lg shadow-gray-200 active:scale-95 uppercase tracking-widest text-xs"
+                className="px-8 py-3 bg-gray-200 text-gray-700 rounded-2xl font-bold hover:bg-gray-300 transition-all active:scale-95 uppercase tracking-widest text-xs"
               >
-                Đóng thông tin
+                Đóng
               </button>
+
+              {(() => {
+                const isAlreadyRegistered = selectedCourse?.isRegistered ||
+                  (selectedCourse?.enrollments && selectedCourse.enrollments.length > 0);
+
+                if (isAlreadyRegistered) {
+                  return (
+                    <button
+                      disabled={processingId === selectedCourse?.cid}
+                      onClick={() => handleUnregister(selectedCourse.cid, selectedCourse.name)}
+                      className="flex items-center justify-center gap-2 px-8 py-3 bg-red-50 text-red-500 border border-red-100 rounded-2xl font-bold hover:bg-red-500 hover:text-white transition-all shadow-md active:scale-95 uppercase tracking-widest text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {processingId === selectedCourse?.cid ? (
+                        <FaSpinner className="animate-spin" />
+                      ) : (
+                        <>
+                          <FaTrashAlt /> HỦY ĐĂNG KÝ
+                        </>
+                      )}
+                    </button>
+                  );
+                } else {
+                  return (
+                    <button
+                      disabled={processingId === selectedCourse?.cid}
+                      onClick={() => handleRegister(selectedCourse.cid, selectedCourse.name)}
+                      className="flex items-center justify-center gap-2 px-8 py-3 bg-[#49BBBD] text-white rounded-2xl font-bold hover:bg-[#3aa4a6] transition-all shadow-lg active:scale-95 uppercase tracking-widest text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {processingId === selectedCourse?.cid ? (
+                        <FaSpinner className="animate-spin" />
+                      ) : (
+                        <>
+                          <FaPlusCircle /> ĐĂNG KÝ MÔN
+                        </>
+                      )}
+                    </button>
+                  );
+                }
+              })()}
             </div>
           </div>
         </div>

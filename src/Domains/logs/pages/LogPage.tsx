@@ -56,10 +56,13 @@ export default function LogPage() {
     }, [clid, pagination.page, pagination.limit, actionFilter]);
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="w-[80vw] mx-auto">
+        <div className="min-h-screen bg-gradient-to-br from-cyan-100 via-teal-50 to-emerald-100 py-8 relative overflow-hidden">
+            <div className="absolute top-20 left-10 w-72 h-72 bg-white/20 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-32 right-10 w-96 h-96 bg-white/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+
+            <div className="w-[80vw] mx-auto relative z-10">
                 {/* ===== HEADER ===== */}
-                <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 p-6 mb-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <button
@@ -104,7 +107,7 @@ export default function LogPage() {
                 </div>
 
                 {/* ===== FILTERS SECTION ===== */}
-                <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+                <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 p-4 mb-6">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2 text-gray-700 font-medium">
                             <Filter size={18} className="text-[#49BBBD]" />
@@ -166,7 +169,7 @@ export default function LogPage() {
                 </div>
 
                 {/* ===== LOG CONTENT ===== */}
-                <div className="bg-white rounded-lg shadow-md border border-teal-100 p-6">
+                <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 p-6">
                     {loading ? (
                         <div className="text-center py-12">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#49BBBD] mx-auto mb-4" />
@@ -280,8 +283,8 @@ export default function LogPage() {
                                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
                                     disabled={pagination.page === 1}
                                     className={`px-3 py-2 rounded-lg font-medium flex items-center gap-1 transition-colors ${pagination.page === 1
-                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
                                         }`}
                                 >
                                     <ChevronLeft size={16} />
@@ -312,8 +315,8 @@ export default function LogPage() {
                                                     <button
                                                         onClick={() => setPagination(prev => ({ ...prev, page: pageNum }))}
                                                         className={`px-3 py-2 rounded-lg font-medium transition-colors min-w-[40px] ${pagination.page === pageNum
-                                                                ? 'bg-[#49BBBD] text-white'
-                                                                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                                            ? 'bg-[#49BBBD] text-white'
+                                                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
                                                             }`}
                                                     >
                                                         {pageNum}
@@ -328,8 +331,8 @@ export default function LogPage() {
                                     onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                                     disabled={pagination.page === pagination.totalPages}
                                     className={`px-3 py-2 rounded-lg font-medium flex items-center gap-1 transition-colors ${pagination.page === pagination.totalPages
-                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
                                         }`}
                                 >
                                     Sau

@@ -165,8 +165,12 @@ export default function QuizResult() {
     const isPassed = percentage >= 50;
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-5xl mx-auto px-4">
+        <div className="min-h-screen bg-gradient-to-br from-cyan-100 via-teal-50 to-emerald-100 py-8 relative overflow-hidden">
+            {/* Decorative Blobs */}
+            <div className="absolute top-20 left-10 w-72 h-72 bg-white/20 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-32 right-10 w-96 h-96 bg-white/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+
+            <div className="max-w-5xl mx-auto px-4 relative z-10">
                 {/* Back Button */}
                 <button
                     onClick={() => navigate(-1)}
@@ -177,7 +181,7 @@ export default function QuizResult() {
                 </button>
 
                 {/* Result Header */}
-                <div className="bg-white rounded-xl shadow-md p-8 mb-6">
+                <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 p-8 mb-6">
                     <div className="text-center mb-6">
                         <div
                             className={`inline-flex items-center justify-center w-24 h-24 rounded-full mb-4 ${isPassed ? 'bg-green-100' : 'bg-red-100'
@@ -256,7 +260,7 @@ export default function QuizResult() {
                     {questions.map((question, index) => (
                         <div
                             key={question.ques_id}
-                            className="bg-white rounded-xl shadow-md p-6"
+                            className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 p-6"
                         >
                             {/* Question Header */}
                             <div className="flex items-start gap-3 mb-4">

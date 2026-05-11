@@ -431,8 +431,11 @@ export default function QuizCreate() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 font-sans">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-100 via-teal-50 to-emerald-100 py-8 px-4 font-sans relative overflow-hidden">
+      <div className="absolute top-20 left-10 w-72 h-72 bg-white/20 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-32 right-10 w-96 h-96 bg-white/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
         {/* HEADER */}
         <div className="flex items-center justify-between mb-6">
           <button
@@ -450,8 +453,8 @@ export default function QuizCreate() {
           <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6">
             <div className="space-y-8">
               {/* --- SECTION 1: CẤU HÌNH CHUNG --- */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex items-center gap-2">
+              <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 overflow-hidden">
+                <div className="bg-white/50 px-6 py-4 border-b border-white/30 flex items-center gap-2">
                   <Type className="text-[#49BBBD]" size={20} />
                   <h2 className="font-bold text-gray-700">Thông tin chung</h2>
                 </div>
@@ -720,8 +723,8 @@ export default function QuizCreate() {
             </div>
 
             <aside className="xl:sticky xl:top-6 self-start">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="bg-gray-50 px-5 py-4 border-b border-gray-200 flex items-center gap-2">
+              <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/30 overflow-hidden">
+                <div className="bg-white/50 px-5 py-4 border-b border-white/30 flex items-center gap-2">
                   <Sparkles className="text-[#49BBBD]" size={18} />
                   <h3 className="font-bold text-gray-700">AI Quiz Assistant</h3>
                 </div>

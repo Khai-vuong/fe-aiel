@@ -316,9 +316,9 @@ function ConversationSkeleton() {
   return (
     <div className="space-y-2 px-1">
       {[...Array(5)].map((_, i) => (
-        <div key={i} className="p-3 rounded-xl bg-gray-100 animate-pulse">
-          <div className="h-3 bg-gray-200 rounded w-3/4 mb-2" />
-          <div className="h-2 bg-gray-200 rounded w-full" />
+        <div key={i} className="p-3 rounded-xl bg-white/30 backdrop-blur-sm animate-pulse">
+          <div className="h-3 bg-white/50 rounded w-3/4 mb-2" />
+          <div className="h-2 bg-white/50 rounded w-full" />
         </div>
       ))}
     </div>
@@ -334,9 +334,9 @@ function MessagesSkeleton() {
           key={i}
           className={`flex gap-2 ${i % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}
         >
-          <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse shrink-0" />
+          <div className="w-8 h-8 rounded-full bg-white/30 backdrop-blur-sm animate-pulse shrink-0" />
           <div
-            className={`h-12 rounded-2xl bg-gray-200 animate-pulse ${i % 2 === 0 ? 'w-1/2' : 'w-2/5'
+            className={`h-12 rounded-2xl bg-white/30 backdrop-blur-sm animate-pulse ${i % 2 === 0 ? 'w-1/2' : 'w-2/5'
               }`}
           />
         </div>
@@ -576,7 +576,7 @@ export default function ChatPage() {
         setActiveConvId(res.conversationId);
         // Refresh danh sách conversations để hiển thị conversation mới
         await fetchConversations(true);
-        setActiveTitle(res.conversationTitle ?? 'New conversation');
+        setActiveTitle(res.conversationTitle ?? 'Cuộc hội thoại mới');
       }
 
       // Thêm message từ assistant
@@ -611,11 +611,14 @@ export default function ChatPage() {
   // ── Render ──
 
   return (
-    <div style={{ height: 'calc(100vh - 64px)' }} className="flex bg-[#F0F4F8] overflow-hidden">
+    <div style={{ height: 'calc(100vh - 64px)' }} className="flex bg-gradient-to-br from-cyan-100 via-teal-50 to-emerald-100 overflow-hidden relative">
+      {/* Decorative blobs */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-r from-cyan-200 to-teal-200 rounded-full opacity-30 blur-3xl -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-r from-teal-200 to-emerald-200 rounded-full opacity-30 blur-3xl translate-x-1/2 translate-y-1/2 animate-pulse"></div>
       {/* ════════════════ LEFT SIDEBAR ════════════════ */}
-      <div className="w-72 shrink-0 flex flex-col bg-white border-r border-gray-100 shadow-sm">
+      <div className="w-72 shrink-0 flex flex-col bg-white/70 backdrop-blur-xl border-r border-white/30 shadow-lg relative z-20">
         {/* Header */}
-        <div className="p-4 border-b border-gray-100">
+        <div className="p-4 border-b border-white/30">
           <div className="flex items-center gap-3 mb-4">
             <button
               onClick={() => navigate('/')}
@@ -639,7 +642,7 @@ export default function ChatPage() {
                        hover:bg-[#3aadaf] active:scale-95 transition"
           >
             <FaPlus size={12} />
-            New conversation
+            Bắt đầu cuộc hội thoại mới
           </button>
         </div>
 
@@ -702,16 +705,16 @@ export default function ChatPage() {
       </div>
 
       {/* ════════════════ RIGHT CHAT AREA ════════════════ */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden relative z-10">
         {/* Header */}
-        <div className="shrink-0 px-6 py-4 bg-white border-b border-gray-100 shadow-sm">
+        <div className="shrink-0 px-6 py-4 bg-white/70 backdrop-blur-xl border-b border-white/30 shadow-lg">
           <h2 className="text-lg font-semibold text-gray-800 truncate">
             {activeTitle || 'New conversation'}
           </h2>
         </div>
 
         {/* Messages area */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5 bg-gradient-to-b from-cyan-50/30 to-teal-50/20">
           {msgLoading ? (
             <MessagesSkeleton />
           ) : messages.length === 0 ? (
@@ -730,8 +733,8 @@ export default function ChatPage() {
         </div>
 
         {/* Input area */}
-        <div className="shrink-0 p-4 bg-white border-t border-gray-100">
-          <div className="flex items-end gap-3 bg-[#F5F7FA] rounded-2xl px-4 py-3 shadow-inner">
+        <div className="shrink-0 p-4 bg-white/70 backdrop-blur-xl border-t border-white/30">
+          <div className="flex items-end gap-3 bg-white/40 backdrop-blur-sm rounded-2xl px-4 py-3 shadow-inner border border-white/20">
             <textarea
               rows={1}
               placeholder="Nhập tin nhắn..."
