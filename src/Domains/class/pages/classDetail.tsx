@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getClassById } from '../services/classServices';
+import { downloadClassFile, getClassById } from '../services/classServices';
 import type { Class } from '../types';
 import QuizList from '../../quiz/pages/QuizList';
 import { quizService } from '../../quiz/services/quiz.service';
@@ -26,6 +26,7 @@ export default function ClassDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [downloadingFid, setDownloadingFid] = useState<string | null>(null);
 
   // ===== UI STATE =====
   const [activeTab, setActiveTab] = useState<'files' | 'quizzes'>('files');
@@ -93,6 +94,41 @@ export default function ClassDetail() {
     if (!classData.schedule_json) return 'Not scheduled';
     const { day, start, end } = classData.schedule_json;
     return `${day || ''} ${start || ''} - ${end || ''}`.trim();
+  };
+
+  const triggerBrowserDownload = (url: string, filename?: string) => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    if (filename) a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  const handleDownloadFile = async (fid: string, filename?: string) => {
+    if (!clid) return;
+    setDownloadingFid(fid);
+    try {
+      const result = await downloadClassFile(clid, fid);
+
+      if (result instanceof Blob) {
+        const blobUrl = URL.createObjectURL(result);
+        triggerBrowserDownload(blobUrl, filename || 'download');
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        return;
+      }
+
+      // Production / S3 signed URL
+      const suggestedName = result.file?.filename || filename;
+      triggerBrowserDownload(result.downloadUrl, suggestedName);
+    } catch (err) {
+      console.error('Failed to download file:', err);
+      alert(err instanceof Error ? err.message : 'Failed to download file');
+    } finally {
+      setDownloadingFid(null);
+    }
   };
 
   return (
@@ -277,15 +313,14 @@ export default function ClassDetail() {
                           </p>
                         </div>
                       </div>
-                      <a
-                        href={file.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] no-underline !text-white !visited:text-white"
-                        style={{ color: 'white' }}
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadFile(file.fid, file.filename)}
+                        disabled={downloadingFid === file.fid}
+                        className="px-4 py-2 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        Tải tài liệu
-                      </a>
+                        {downloadingFid === file.fid ? 'Đang tải...' : 'Tải tài liệu'}
+                      </button>
                     </div>
                   ))
                 ) : (

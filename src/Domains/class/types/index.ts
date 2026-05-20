@@ -35,10 +35,25 @@ export interface Student {
 export interface ClassFile {
   fid: string;
   filename: string;
+  original_name?: string;
   url: string;
+  size?: number;
+  mime_type?: string;
   file_type: string;
   is_public: boolean;
   created_at?: string;
+}
+
+export interface ClassFileDownloadResponse {
+  file: {
+    fid: string;
+    filename: string;
+    original_name?: string;
+    size?: number;
+    mime_type?: string;
+    file_type?: string;
+  };
+  downloadUrl: string;
 }
 
 export interface Quiz {
@@ -91,8 +106,24 @@ export interface ClassWithDetails extends Class {
 }
 
 export interface CreateFromEnrollmentsDto {
-  courseId: string;
-  className: string;
-  startDate?: string;
-  endDate?: string;
+  maxStudentsPerClass: number;
+  schedule_json?: string;
+  location?: string;
+}
+
+export interface ProcessEnrollmentsResponseDto {
+  number_of_enrollments_processed: number;
+  number_of_classes_created: number;
+  maximum_students_per_class: number;
+  created_classes: Array<{
+    classId: string;
+    className: string;
+    courseCode?: string;
+    courseName?: string;
+    studentCount?: number;
+    students?: Array<{
+      studentId: string;
+      studentName: string;
+    }>;
+  }>;
 }

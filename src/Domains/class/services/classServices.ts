@@ -2,9 +2,10 @@ import type {
   Class,
 //   ClassCreateDto,
   ClassUpdateDto,
-  ResponseCreateClassDto,
   AddResourceDto,
   CreateFromEnrollmentsDto,
+  ProcessEnrollmentsResponseDto,
+  ClassFileDownloadResponse,
 } from '../types';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL ?? 'http://localhost:3000';
@@ -43,7 +44,7 @@ export const getAllClasses = async (): Promise<Class[]> => {
  */
 export const getMyClasses = async (): Promise<Class[]> => {
   const token = getToken();
-  const res = await fetch(`${BASE_URL}/classes/me`, {
+  const res = await fetch(`${BASE_URL}/classes/my`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -123,16 +124,16 @@ export const deleteClass = async (
  * Create classes from pending enrollments
  */
 export const createClassesFromEnrollments = async (
-  data?: CreateFromEnrollmentsDto
-): Promise<ResponseCreateClassDto[]> => {
+  data: CreateFromEnrollmentsDto
+): Promise<ProcessEnrollmentsResponseDto> => {
   const token = getToken();
-  const res = await fetch(`${BASE_URL}/classes/createFromEnrollments`, {
+  const res = await fetch(`${BASE_URL}/classes/process-enrollments`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: data ? JSON.stringify(data) : undefined,
+    body: JSON.stringify(data),
   });
 
   if (!res.ok) {
@@ -140,6 +141,75 @@ export const createClassesFromEnrollments = async (
   }
 
   return res.json();
+};
+
+/**
+ * Process pending enrollments -> create classes
+ * Docs: POST /classes/process-enrollments
+ */
+export const processEnrollments = async (
+  data: CreateFromEnrollmentsDto
+): Promise<ProcessEnrollmentsResponseDto> => {
+  return createClassesFromEnrollments(data);
+};
+
+/**
+ * Upload file to class
+ * Docs: POST /classes/upload/:clid
+ */
+export const uploadClassFile = async (
+  clid: string,
+  file: File
+): Promise<unknown> => {
+  const token = getToken();
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${BASE_URL}/classes/upload/${clid}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to upload class file');
+  }
+
+  return res.json();
+};
+
+export type DownloadClassFileResult = ClassFileDownloadResponse | Blob;
+
+/**
+ * Download file from class
+ * Docs: GET /classes/download/:clid/:fid
+ * - Local mode: returns binary
+ * - Production mode: returns JSON with signed downloadUrl
+ */
+export const downloadClassFile = async (
+  clid: string,
+  fid: string
+): Promise<DownloadClassFileResult> => {
+  const token = getToken();
+  const res = await fetch(`${BASE_URL}/classes/download/${clid}/${fid}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to download class file');
+  }
+
+  const contentType = res.headers.get('content-type') ?? '';
+  if (contentType.includes('application/json')) {
+    return res.json();
+  }
+
+  return res.blob();
 };
 
 /**
