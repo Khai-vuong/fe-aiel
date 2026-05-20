@@ -44,7 +44,7 @@ export const getAllClasses = async (): Promise<Class[]> => {
  */
 export const getMyClasses = async (): Promise<Class[]> => {
   const token = getToken();
-  const res = await fetch(`${BASE_URL}/classes/my`, {
+  const res = await fetch(`${BASE_URL}/classes/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
