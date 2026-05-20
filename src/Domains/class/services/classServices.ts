@@ -160,11 +160,22 @@ export const processEnrollments = async (
 export const uploadClassFile = async (
   clid: string,
   file: File
+  ,
+  options?: {
+    fileType?: string;
+    isPublic?: boolean;
+  }
 ): Promise<unknown> => {
   const token = getToken();
 
   const formData = new FormData();
   formData.append('file', file);
+  if (options?.fileType) {
+    formData.append('file_type', options.fileType);
+  }
+  if (typeof options?.isPublic === 'boolean') {
+    formData.append('is_public', String(options.isPublic));
+  }
 
   const res = await fetch(`${BASE_URL}/classes/upload/${clid}`, {
     method: 'POST',

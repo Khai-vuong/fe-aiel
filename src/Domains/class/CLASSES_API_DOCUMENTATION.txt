@@ -46,7 +46,7 @@ Example Output:
 ]
 
 
-====2. GET /classes/my
+====2. GET /classes/me
 ====Description: Lay danh sach lop hoc cua user hien tai (Student hoac Lecturer)
 Method: GET
 Role: Student, Lecturer

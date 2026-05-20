@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FileText, Upload, Lock, Unlock, FileCheck } from 'lucide-react';
+import { uploadClassFile } from '../../class/services/classServices';
 
 export default function FileAdd() {
     const navigate = useNavigate();
@@ -9,6 +10,7 @@ export default function FileAdd() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
     const [formData, setFormData] = useState({
         fileType: 'document',
         isPublic: false
@@ -47,7 +49,7 @@ export default function FileAdd() {
         return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         // Validation
@@ -61,37 +63,33 @@ export default function FileAdd() {
             return;
         }
 
-        // Mock file upload data
-        const mockFileData = {
-            fid: `file_${Date.now()}`,
-            filename: selectedFile.name,
-            url: `https://mockcdn.example.com/files/${selectedFile.name}`,
-            size: selectedFile.size,
-            mime_type: selectedFile.type,
-            file_type: formData.fileType,
-            is_public: formData.isPublic,
-            class_id: clid,
-            uploader_id: localStorage.getItem('userId') || 'mock-user-id',
-            created_at: new Date().toISOString()
-        };
+        if (isUploading) return;
 
-        console.log('Uploading file:', mockFileData);
-
-        // Simulate upload delay
-        toast.info('Đang tải tệp lên...');
-
-        setTimeout(() => {
-            const success = Math.random() > 0.1; // 90% success rate for demo
-
-            if (success) {
-                toast.success(`Tải tệp "${selectedFile.name}" thành công!`);
-                setTimeout(() => {
-                    navigate(-1);
-                }, 1500);
-            } else {
-                toast.error('Tải tệp thất bại! Vui lòng thử lại.');
-            }
-        }, 1500);
+        setIsUploading(true);
+        const toastId = toast.loading('Đang tải tệp lên...');
+        try {
+            await uploadClassFile(clid, selectedFile, {
+                fileType: formData.fileType,
+                isPublic: formData.isPublic,
+            });
+            toast.update(toastId, {
+                render: `Tải tệp "${selectedFile.name}" thành công!`,
+                type: 'success',
+                isLoading: false,
+                autoClose: 1500,
+            });
+            setTimeout(() => navigate(-1), 1600);
+        } catch (error) {
+            console.error('Upload failed:', error);
+            toast.update(toastId, {
+                render: error instanceof Error ? error.message : 'Tải tệp thất bại! Vui lòng thử lại.',
+                type: 'error',
+                isLoading: false,
+                autoClose: 3000,
+            });
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     const getFileIcon = () => {
@@ -248,21 +246,14 @@ export default function FileAdd() {
                         </button>
                         <button
                             type="submit"
-                            disabled={!selectedFile}
+                            disabled={!selectedFile || isUploading}
                             className="flex-1 px-6 py-3 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] transition-colors font-medium flex items-center justify-center gap-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
                         >
                             <FileCheck className="w-5 h-5" />
-                            Tải tệp lên
+                            {isUploading ? 'Đang tải...' : 'Tải tệp lên'}
                         </button>
                     </div>
                 </form>
-
-                {/* Info Box */}
-                <div className="mt-6 bg-white/70 backdrop-blur-xl border border-white/30 rounded-3xl p-4">
-                    <p className="text-sm text-blue-800">
-                        <strong>Lưu ý:</strong> Đây là form tải tệp giả lập. Tệp không được tải lên máy chủ thật.
-                    </p>
-                </div>
 
                 {/* File Info Display */}
                 {selectedFile && (
