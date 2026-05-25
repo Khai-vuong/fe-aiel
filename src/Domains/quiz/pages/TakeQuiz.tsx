@@ -276,14 +276,14 @@ export default function TakeQuiz() {
                       key={opt.id}
                       onClick={() => handleSelectOption(questionId, opt.id)}
                       className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${isSelected
-                          ? 'border-[#49BBBD] bg-teal-50'
-                          : 'border-gray-100 hover:border-gray-300'
+                        ? 'border-[#49BBBD] bg-teal-50'
+                        : 'border-gray-100 hover:border-gray-300'
                         }`}
                     >
                       <div
                         className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm ${isSelected
-                            ? 'border-[#49BBBD] bg-[#49BBBD] text-white'
-                            : 'border-gray-300 text-gray-500'
+                          ? 'border-[#49BBBD] bg-[#49BBBD] text-white'
+                          : 'border-gray-300 text-gray-500'
                           }`}
                       >
                         {opt.id}
@@ -349,17 +349,14 @@ export default function TakeQuiz() {
             </div>
             <div className="grid grid-cols-5 gap-2 max-h-[60vh] overflow-y-auto">
               {questions.map((q, idx) => {
-                const isDone = q.ques_id ? !!answers[q.ques_id] : false;
-                const isNow = idx === currentQIndex;
+                const isNow = (idx === currentQIndex);
                 return (
                   <button
                     key={q.ques_id}
                     onClick={() => setCurrentQIndex(idx)}
-                    className={`h-9 rounded-lg text-xs font-bold transition-all ${isNow
-                        ? 'bg-[#49BBBD] text-white'
-                        : isDone
-                          ? 'bg-teal-50 text-[#49BBBD] border border-[#49BBBD]'
-                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    className={`h-9 rounded-lg text-xs font-bold transition-all flex items-center justify-center leading-none ${isNow
+                      ? 'bg-teal-500 text-white'
+                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                       }`}
                   >
                     {idx + 1}
@@ -376,6 +373,6 @@ export default function TakeQuiz() {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

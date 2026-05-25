@@ -28,6 +28,11 @@ export default function QuizDetail() {
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
+  const [showStartConfirm, setShowStartConfirm] = useState(false);
+
+  const latestInProgressAttempt = attempts.find(
+    attempt => attempt.status === 'in_progress'
+  );
 
   // --- PHẦN 0: GỌI API LẤY THÔNG TIN QUIZ ---
   useEffect(() => {
@@ -72,7 +77,12 @@ export default function QuizDetail() {
   }, []);
 
   // --- PHẦN 2: XỬ LÝ LÀM BÀI (GỌI API THẬT) ---
-  const handleStartQuiz = async () => {
+  const handleStartQuiz = async (resumeAttemptId?: string) => {
+    if (resumeAttemptId) {
+      navigate(`/take-quiz/${resumeAttemptId}`);
+      return;
+    }
+
     const studentId = localStorage.getItem('roleId');
 
     if (!studentId) {
@@ -114,6 +124,10 @@ export default function QuizDetail() {
       setStarting(false);
     }
   };
+
+  const primaryButtonLabel = latestInProgressAttempt
+    ? 'Tiếp tục làm bài'
+    : 'Bắt đầu làm bài';
 
   // Tính điểm cao nhất
   const bestScore = attempts.reduce(
@@ -201,7 +215,7 @@ export default function QuizDetail() {
               </div>
 
               <button
-                onClick={handleStartQuiz}
+                onClick={() => setShowStartConfirm(true)}
                 disabled={starting}
                 className="flex items-center gap-3 bg-[#49BBBD] text-white px-8 py-3 rounded-full font-bold text-lg hover:bg-[#3aa8aa] transition-all shadow-lg shadow-teal-100 active:scale-95 disabled:opacity-70"
               >
@@ -209,7 +223,7 @@ export default function QuizDetail() {
                   'Đang khởi tạo...'
                 ) : (
                   <>
-                    <PlayCircle size={24} /> Bắt đầu làm bài
+                    <PlayCircle size={24} /> {primaryButtonLabel}
                   </>
                 )}
               </button>
@@ -294,6 +308,42 @@ export default function QuizDetail() {
           </div>
         </div>
       </div>
+
+      {showStartConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl border border-white/40">
+            <h3 className="text-xl font-bold text-gray-800 mb-3">
+              Xác nhận bắt đầu
+            </h3>
+            <p className="text-gray-600 leading-relaxed mb-6">
+              {latestInProgressAttempt
+                ? 'Bạn đang có một bài làm dang dở. Bạn không thể tương tác với các tính năng khác cho đến khi làm bài xong. Tiếp tục chứ?'
+                : 'Bạn không thể tương tác với các tính năng khác cho đến khi làm bài xong. Bắt đầu chứ?'}
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowStartConfirm(false)}
+                className="px-5 py-2.5 rounded-full border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setShowStartConfirm(false);
+                  await handleStartQuiz(latestInProgressAttempt?.atid);
+                }}
+                disabled={starting}
+                className="px-5 py-2.5 rounded-full bg-[#49BBBD] text-white font-semibold hover:bg-[#3aa8aa] transition-colors disabled:opacity-70"
+              >
+                {latestInProgressAttempt ? 'Tiếp tục' : 'Làm bài'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
