@@ -626,7 +626,7 @@ export default function AiChatSidebar({ isOpen, onClose }: AiChatSidebarProps) {
                                     ? 'Nhập câu hỏi cho AI...'
                                     : 'Đăng nhập để chat với AI'
                             }
-                            className="min-h-[52px] flex-1 resize-none bg-transparent text-sm text-white outline-none placeholder:text-slate-400 disabled:cursor-not-allowed pl-2 pt-1"
+                            className="min-h-[52px] flex-1 resize-none bg-transparent text-sm text-white outline-none placeholder:text-slate-400 disabled:cursor-not-allowed px-2 py-1 "
                         />
 
                         <button
