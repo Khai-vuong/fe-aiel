@@ -287,14 +287,23 @@ export default function QuizCreate() {
     setAiStreamStatus('Đang gửi prompt tới AI...');
 
     try {
-      setAiStreamStatus('Đang tạo bộ câu hỏi và kiểm tra JSON trả về...');
-      const response = await quizGenService.generateQuiz({
-        text: prompt,
-        // metadata: {sendFrom: 'QuizCreatePage'}
-        ...(preferredProvider !== 'auto' ? { provider: preferredProvider } : {}),
-      });
-
-      setAiStreamStatus(`Đã nhận phản hồi từ ${response.provider}.`);
+      const response = await quizGenService.streamGenerateQuiz(
+        {
+          text: prompt,
+          metadata: { classId: clid },
+          ...(preferredProvider !== 'auto' ? { provider: preferredProvider } : {}),
+        },
+        {
+          onProgress: (ev) => {
+            // show latest thought/message from backend
+            if (ev?.message) setAiStreamStatus(String(ev.message));
+          },
+          onFinal: (finalResp) => {
+            // ensure provider note is shown briefly
+            setAiStreamStatus(`Đã nhận phản hồi từ ${finalResp.provider}.`);
+          },
+        },
+      );
 
       const generatedDrafts = response.questions
         .map(mapAiQuestionToDraft)
@@ -329,12 +338,13 @@ export default function QuizCreate() {
       toast.success(`Đã thêm ${generatedDrafts.length} câu hỏi từ AI.`);
       setAiPrompt('');
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Không thể tạo câu hỏi từ AI.';
+      const msg = err.response?.data?.message || err.message || 'Không thể tạo câu hỏi từ AI.';
       setAiStreamStatus('Không thể tạo stream AI lúc này.');
       toast.error(msg);
     } finally {
       setGeneratingByAi(false);
-      setAiStreamStatus('');
+      // clear the status after a short delay so user sees final note
+      setTimeout(() => setAiStreamStatus(''), 700);
     }
   };
 

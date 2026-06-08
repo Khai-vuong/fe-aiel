@@ -13,6 +13,9 @@ export type QuizJson = Record<string, unknown> | unknown[];
 export interface QuizGenRequest {
   text: string;
   provider?: QuizProvider;
+  metadata?: {
+    classId?: string;
+  };
 }
 
 export interface QuizQuestion {
@@ -71,6 +74,109 @@ export class QuizGenService {
     const api = this.createAxiosInstance();
     const response = await api.post('/quizgen', data);
     return response.data;
+  }
+
+  /**
+   * Stream quiz generation via SSE if backend supports it.
+   * Handlers receive progress events and final response.
+   */
+  public async streamGenerateQuiz(
+    data: QuizGenRequest,
+    handlers: {
+      onProgress?: (event: { stage?: string; message?: string; data?: Record<string, unknown> }) => void;
+      onFinal?: (resp: QuizGenResponse) => void;
+    } = {},
+  ): Promise<QuizGenResponse> {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${this.baseURL}/ai/quizgen?stream=true`, {
+      method: 'POST',
+      headers: {
+        Authorization: token ? `Bearer ${token}` : '',
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error(`QuizGen failed with status ${response.status}`);
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+
+    if (!response.body || !contentType.includes('text/event-stream')) {
+      return (await response.json()) as QuizGenResponse;
+    }
+
+    const decoder = new TextDecoder('utf-8');
+    const reader = response.body.getReader();
+    let buffer = '';
+    let finalResp: QuizGenResponse | null = null;
+
+    const handleBlock = (rawBlock: string) => {
+      const block = rawBlock.trim();
+      if (!block) return;
+
+      const lines = block.split('\n');
+      let eventName = 'message';
+      const dataLines: string[] = [];
+
+      lines.forEach((line) => {
+        if (line.startsWith('event:')) {
+          eventName = line.slice(6).trim();
+          return;
+        }
+        if (line.startsWith('data:')) {
+          dataLines.push(line.slice(5).trimStart());
+        }
+      });
+
+      if (dataLines.length === 0) return;
+
+      const payloadText = dataLines.join('\n');
+
+      try {
+        const payload = JSON.parse(payloadText) as any;
+
+        if (eventName === 'progress') {
+          handlers.onProgress?.(payload as { stage?: string; message?: string; data?: Record<string, unknown> });
+          return;
+        }
+
+        if (eventName === 'final') {
+          finalResp = payload as QuizGenResponse;
+          handlers.onFinal?.(finalResp);
+        }
+      } catch (error) {
+        // ignore parse errors for non-JSON chunks
+        console.error('Failed to parse QuizGen stream event:', error);
+      }
+    };
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
+
+        let separatorIndex = buffer.indexOf('\n\n');
+        while (separatorIndex >= 0) {
+          const block = buffer.slice(0, separatorIndex);
+          buffer = buffer.slice(separatorIndex + 2);
+          handleBlock(block);
+          separatorIndex = buffer.indexOf('\n\n');
+        }
+      }
+
+      buffer += decoder.decode().replace(/\r\n/g, '\n');
+      if (buffer.trim()) handleBlock(buffer);
+    } finally {
+      reader.releaseLock();
+    }
+
+    if (finalResp) return finalResp;
+    throw new Error('QuizGen stream ended without a final response');
   }
 }
 
