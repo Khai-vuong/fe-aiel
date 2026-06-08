@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { downloadClassFile, getClassById } from '../services/classServices';
+import { deleteClassFile, downloadClassFile, getClassById } from '../services/classServices';
 import type { Class } from '../types';
 import QuizList from '../../quiz/pages/QuizList';
 import { quizService } from '../../quiz/services/quiz.service';
@@ -15,6 +15,8 @@ import {
   ChevronDown,
   ChevronUp,
   Activity,
+  Download,
+  Trash2,
 } from 'lucide-react';
 
 export default function ClassDetail() {
@@ -27,6 +29,7 @@ export default function ClassDetail() {
   const [error, setError] = useState<string | null>(null);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [downloadingFid, setDownloadingFid] = useState<string | null>(null);
+  const [deletingFid, setDeletingFid] = useState<string | null>(null);
 
   // ===== UI STATE =====
   const [activeTab, setActiveTab] = useState<'files' | 'quizzes'>('files');
@@ -128,6 +131,26 @@ export default function ClassDetail() {
       alert(err instanceof Error ? err.message : 'Failed to download file');
     } finally {
       setDownloadingFid(null);
+    }
+  };
+
+  const handleDeleteFile = async (fid: string) => {
+    if (!clid) return;
+
+    const confirmed = window.confirm('Bạn có chắc muốn xóa file này không? File sẽ được ẩn khỏi lớp.');
+    if (!confirmed) return;
+
+    setDeletingFid(fid);
+    try {
+      await deleteClassFile(fid);
+      const refreshed = await getClassById(clid);
+      setClassData(refreshed);
+      alert('Xóa file thành công');
+    } catch (err) {
+      console.error('Failed to delete file:', err);
+      alert(err instanceof Error ? err.message : 'Failed to delete file');
+    } finally {
+      setDeletingFid(null);
     }
   };
 
@@ -287,13 +310,15 @@ export default function ClassDetail() {
             {activeTab === 'files' && (
               <div className="space-y-3">
                 {userRole === 'Lecturer' && (
-                  <button
-                    onClick={() => navigate(`/class/${classData.clid}/fileAdd`)}
-                    className="w-full px-4 py-3 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] font-medium flex items-center justify-center gap-2"
-                  >
-                    <FileText className="w-5 h-5" />
-                    Upload File
-                  </button>
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => navigate(`/class/${classData.clid}/fileAdd`)}
+                      className="px-4 py-3 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] font-medium flex items-center justify-center gap-2"
+                    >
+                      <FileText className="w-5 h-5" />
+                      Upload File
+                    </button>
+                  </div>
                 )}
                 {classData.files && classData.files.length > 0 ? (
                   classData.files.map(file => (
@@ -308,19 +333,35 @@ export default function ClassDetail() {
                             {file.filename}
                           </p>
                           <p className="text-sm text-gray-500">
-                            {file.file_type} •{' '}
-                            {file.is_public ? 'Public' : 'Private'}
+                            {file.file_type}
+                            {/* •{' '} {file.is_public ? 'Public' : 'Private'} */}
                           </p>
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleDownloadFile(file.fid, file.filename)}
-                        disabled={downloadingFid === file.fid}
-                        className="px-4 py-2 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] disabled:opacity-60 disabled:cursor-not-allowed"
-                      >
-                        {downloadingFid === file.fid ? 'Đang tải...' : 'Tải tài liệu'}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadFile(file.fid, file.filename)}
+                          disabled={downloadingFid === file.fid || deletingFid === file.fid}
+                          className="px-4 py-2 bg-[#49BBBD] text-white rounded-lg hover:bg-[#3a9ea0] disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                          <Download size={16} />
+                          {downloadingFid === file.fid ? 'Đang tải...' : 'Tải tài liệu'}
+                        </button>
+
+                        {userRole === 'Lecturer' && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteFile(file.fid)}
+                            disabled={deletingFid === file.fid || downloadingFid === file.fid}
+                            className="p-2 text-gray-500 hover:text-red-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                            title="Xóa file"
+                            aria-label="Xóa file"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))
                 ) : (

@@ -224,6 +224,24 @@ export const downloadClassFile = async (
 };
 
 /**
+ * Soft delete file from a class
+ * Docs: DELETE /classes/file/:fid
+ */
+export const deleteClassFile = async (fid: string): Promise<void> => {
+  const token = getToken();
+  const res = await fetch(`${BASE_URL}/classes/file/${fid}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to delete class file');
+  }
+};
+
+/**
  * Add resource to class
  */
 export const addResourceToClass = async (
