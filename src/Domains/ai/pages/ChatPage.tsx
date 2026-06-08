@@ -917,7 +917,7 @@ export default function ChatPage() {
                   handleSend();
                 }
               }}
-              className="flex-1 bg-transparent resize-none outline-none text-sm
+              className="flex-1 bg-transparent resize-none outline-none text-sm pl-2
                              text-gray-800 placeholder-gray-400 max-h-36 leading-relaxed"
             />
             <button
