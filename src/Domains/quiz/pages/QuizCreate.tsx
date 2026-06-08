@@ -161,6 +161,7 @@ export default function QuizCreate() {
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [generatingByAi, setGeneratingByAi] = useState(false);
+  const [aiStreamStatus, setAiStreamStatus] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
   const [preferredProvider, setPreferredProvider] = useState<'auto' | QuizProvider>('auto');
   const [aiHistory, setAiHistory] = useState<AiPromptHistoryItem[]>([]);
@@ -283,13 +284,17 @@ export default function QuizCreate() {
     }
 
     setGeneratingByAi(true);
+    setAiStreamStatus('Đang gửi prompt tới AI...');
 
     try {
+      setAiStreamStatus('Đang tạo bộ câu hỏi và kiểm tra JSON trả về...');
       const response = await quizGenService.generateQuiz({
         text: prompt,
         // metadata: {sendFrom: 'QuizCreatePage'}
         ...(preferredProvider !== 'auto' ? { provider: preferredProvider } : {}),
       });
+
+      setAiStreamStatus(`Đã nhận phản hồi từ ${response.provider}.`);
 
       const generatedDrafts = response.questions
         .map(mapAiQuestionToDraft)
@@ -325,9 +330,11 @@ export default function QuizCreate() {
       setAiPrompt('');
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Không thể tạo câu hỏi từ AI.';
+      setAiStreamStatus('Không thể tạo stream AI lúc này.');
       toast.error(msg);
     } finally {
       setGeneratingByAi(false);
+      setAiStreamStatus('');
     }
   };
 
@@ -765,10 +772,10 @@ export default function QuizCreate() {
                     type="button"
                     onClick={handleGenerateQuestionsWithAi}
                     disabled={generatingByAi}
-                    className="w-full bg-[#49BBBD] text-white px-4 py-2.5 rounded-lg font-bold hover:bg-[#3aa8aa] transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+                    className="w-full bg-[#49BBBD] text-white px-4 py-3 rounded-lg font-bold hover:bg-[#3aa8aa] transition-all disabled:opacity-70 flex items-center justify-center gap-2 text-left"
                   >
                     <SendHorizontal size={16} />
-                    {generatingByAi ? 'AI đang tạo câu hỏi...' : 'Gửi prompt cho AI'}
+                    <span>{generatingByAi ? aiStreamStatus || 'AI đang tạo câu hỏi...' : 'Gửi prompt cho AI'}</span>
                   </button>
 
                   <div className="rounded-lg border border-[#49BBBD]/30 bg-[#49BBBD]/5 p-3 text-xs text-gray-600">

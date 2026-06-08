@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, BotMessageSquare, Loader2, Send, Sparkles, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import aiConversationService, {
+    type AiStreamProgressEvent,
     type ConversationSummary,
     type Message,
 } from '../Domains/ai/services/AiConversation.service';
@@ -13,6 +14,7 @@ type SidebarMessage = {
     content: string;
     createdAt: string;
     completionTime?: number | null;
+    isStreaming?: boolean;
 };
 
 type AiChatSidebarProps = {
@@ -62,6 +64,43 @@ const normalizeMarkdownContent = (raw: string) => {
             return line;
         })
         .join('\n');
+};
+
+const formatStreamValue = (value: unknown): string => {
+    if (Array.isArray(value)) {
+        return value
+            .map((item) => formatStreamValue(item))
+            .filter(Boolean)
+            .join(', ');
+    }
+
+    if (value && typeof value === 'object') {
+        return JSON.stringify(value);
+    }
+
+    return String(value);
+};
+
+const formatProgressBlock = (event: AiStreamProgressEvent) => {
+    const lines: string[] = [];
+
+    if (event.stage) {
+        lines.push(`**${event.stage}**`);
+    }
+
+    if (event.message) {
+        lines.push(event.message);
+    }
+
+    if (event.data && Object.keys(event.data).length > 0) {
+        lines.push(
+            Object.entries(event.data)
+                .map(([key, value]) => `${key}: ${formatStreamValue(value)}`)
+                .join(' · '),
+        );
+    }
+
+    return lines.join('\n');
 };
 
 export default function AiChatSidebar({ isOpen, onClose }: AiChatSidebarProps) {
@@ -219,17 +258,31 @@ export default function AiChatSidebar({ isOpen, onClose }: AiChatSidebarProps) {
         role: SidebarMessage['role'],
         content: string,
         completionTime?: number | null,
+        isStreaming = false,
     ) => {
+        const messageId = `${role}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
         setMessages((current) => [
             ...current,
             {
-                id: `${role}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                id: messageId,
                 role,
                 content,
                 createdAt: new Date().toISOString(),
                 completionTime: completionTime ?? null,
+                isStreaming,
             },
         ]);
+
+        return messageId;
+    };
+
+    const updateMessage = (messageId: string, updater: (message: SidebarMessage) => SidebarMessage) => {
+        setMessages((current) => current.map((message) => (message.id === messageId ? updater(message) : message)));
+    };
+
+    const removeMessage = (messageId: string) => {
+        setMessages((current) => current.filter((message) => message.id !== messageId));
     };
 
     const handleSend = async (text?: string) => {
@@ -251,25 +304,43 @@ export default function AiChatSidebar({ isOpen, onClose }: AiChatSidebarProps) {
         }
         appendMessage('user', userText);
         setSending(true);
+        const assistantMessageId = appendMessage('assistant', '', null, true);
 
         try {
             const { classId, quizId } = getContextFromPath(location.pathname);
 
-            const response = await aiConversationService.sendChat({
-                text: userText,
-                conversationId: conversationId ?? undefined,
-                provider: 'groq',
-                serviceType: 'TEACHING_ASSISTANT',
-                metadata: {
-                    sendFrom: 'AiChatSidebar',
-                    classId,
-                    quizId,
+            const response = await aiConversationService.streamChat(
+                {
+                    text: userText,
+                    conversationId: conversationId ?? undefined,
+                    provider: 'groq',
+                    serviceType: 'TEACHING_ASSISTANT',
+                    metadata: {
+                        sendFrom: 'AiChatSidebar',
+                        classId,
+                        quizId,
+                    },
                 },
-            });
+                {
+                    onProgress: (event) => {
+                        updateMessage(assistantMessageId, (message) => ({
+                            ...message,
+                            content: formatProgressBlock(event),
+                        }));
+                    },
+                },
+            );
 
             if (!response.success) {
                 throw new Error(response.error?.message ?? 'AI chat failed');
             }
+
+            updateMessage(assistantMessageId, (message) => ({
+                ...message,
+                content: response.text,
+                completionTime: response.metadata?.processingTime ?? null,
+                isStreaming: false,
+            }));
 
             if (!conversationId && response.conversationId) {
                 setConversationId(response.conversationId);
@@ -288,10 +359,9 @@ export default function AiChatSidebar({ isOpen, onClose }: AiChatSidebarProps) {
                     }
                 }
             }
-
-            appendMessage('assistant', response.text, response.metadata?.processingTime ?? null);
         } catch (error) {
             console.error('AI sidebar chat error:', error);
+            removeMessage(assistantMessageId);
             setErrorMessage('Không thể gửi tin nhắn lúc này. Vui lòng thử lại.');
         } finally {
             setSending(false);
@@ -399,7 +469,6 @@ export default function AiChatSidebar({ isOpen, onClose }: AiChatSidebarProps) {
 
                     {isAuthenticated && mode === 'chat' ? (
                         <div className="space-y-4">
-
                             {conversationMessagesLoading ? (
                                 <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
                                     <Loader2 className="h-4 w-4 animate-spin text-[#49BBBD]" />
@@ -413,106 +482,113 @@ export default function AiChatSidebar({ isOpen, onClose }: AiChatSidebarProps) {
                                         key={message.id}
                                         className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                                     >
-                                        <div
-                                            className={`max-w-[85%] rounded-3xl px-4 py-3 text-sm leading-relaxed shadow-lg ${message.role === 'user'
-                                                ? 'bg-[#49BBBD] text-white shadow-teal-900/20'
-                                                : 'bg-white text-slate-800 shadow-black/10'
-                                                }`}
-                                        >
-                                            <ReactMarkdown
-                                                components={{
-                                                    h1: ({ children }) => <h1 className="mb-3 mt-4 text-base font-bold first:mt-0">{children}</h1>,
-                                                    h2: ({ children }) => <h2 className="mb-2 mt-3 text-sm font-bold first:mt-0">{children}</h2>,
-                                                    h3: ({ children }) => <h3 className="mb-2 mt-2 text-sm font-semibold first:mt-0">{children}</h3>,
-                                                    h4: ({ children }) => <h4 className="mb-2 mt-2 text-xs font-semibold first:mt-0">{children}</h4>,
-                                                    h5: ({ children }) => <h5 className="mb-1 mt-2 text-xs font-semibold first:mt-0">{children}</h5>,
-                                                    h6: ({ children }) => <h6 className="mb-1 mt-2 text-xs font-semibold first:mt-0">{children}</h6>,
-                                                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                                                    strong: ({ children }) => <strong className="font-bold">{children}</strong>,
-                                                    em: ({ children }) => <em className="italic">{children}</em>,
-                                                    ul: ({ children }) => (
-                                                        <ul className="mb-2 list-disc space-y-0.5 pl-5 [&_ul]:mt-1 [&_ul]:list-circle [&_ul]:pl-5">
-                                                            {children}
-                                                        </ul>
-                                                    ),
-                                                    ol: ({ children }) => (
-                                                        <ol className="mb-2 list-decimal space-y-0.5 pl-5 [&_ol]:mt-1 [&_ol]:pl-5">
-                                                            {children}
-                                                        </ol>
-                                                    ),
-                                                    li: ({ children }) => <li className="ml-1">{children}</li>,
-                                                    blockquote: ({ children }) => (
-                                                        <blockquote className={`mb-2 border-l-2 py-1 pl-3 italic ${message.role === 'user' ? 'border-white/60 text-white/90' : 'border-slate-300 text-slate-500'}`}>
-                                                            {children}
-                                                        </blockquote>
-                                                    ),
-                                                    code: ({ children, className }) => {
-                                                        if (className) {
-                                                            return (
-                                                                <pre className={`mb-2 overflow-x-auto rounded p-3 text-xs ${message.role === 'user' ? 'bg-black/25 text-white' : 'bg-slate-900 text-slate-100'}`}>
-                                                                    <code>{children}</code>
-                                                                </pre>
-                                                            );
-                                                        }
+                                        {(() => {
+                                            const isStream = Boolean(message.isStreaming);
 
-                                                        return (
-                                                            <code className={`rounded px-1.5 py-0.5 text-xs ${message.role === 'user' ? 'bg-black/20 text-white' : 'bg-slate-100 text-slate-800'}`}>
-                                                                {children}
-                                                            </code>
-                                                        );
-                                                    },
-                                                    pre: ({ children }) => <pre className="mb-2 overflow-x-auto">{children}</pre>,
-                                                    a: ({ children, href }) => (
-                                                        <a
-                                                            href={href}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className={`underline transition hover:opacity-80 ${message.role === 'user' ? 'text-cyan-100' : 'text-blue-600'}`}
-                                                        >
-                                                            {children}
-                                                        </a>
-                                                    ),
-                                                    hr: () => <hr className={`my-2 ${message.role === 'user' ? 'border-white/30' : 'border-slate-300'}`} />,
-                                                    table: ({ children }) => (
-                                                        <table className="mb-2 w-full border-collapse text-xs">
-                                                            {children}
-                                                        </table>
-                                                    ),
-                                                    thead: ({ children }) => <thead className={message.role === 'user' ? 'bg-black/15' : 'bg-slate-100'}>{children}</thead>,
-                                                    tbody: ({ children }) => <tbody>{children}</tbody>,
-                                                    tr: ({ children }) => <tr className={message.role === 'user' ? 'border border-white/30' : 'border border-slate-300'}>{children}</tr>,
-                                                    th: ({ children }) => (
-                                                        <th className={`border px-2 py-1 text-left font-semibold ${message.role === 'user' ? 'border-white/30' : 'border-slate-300'}`}>
-                                                            {children}
-                                                        </th>
-                                                    ),
-                                                    td: ({ children }) => (
-                                                        <td className={`border px-2 py-1 ${message.role === 'user' ? 'border-white/30' : 'border-slate-300'}`}>
-                                                            {children}
-                                                        </td>
-                                                    ),
-                                                }}
-                                            >
-                                                {normalizeMarkdownContent(message.content)}
-                                            </ReactMarkdown>
-                                            <div className={`mt-2 flex items-center gap-2 text-[11px] ${message.role === 'user' ? 'text-white/80' : 'text-slate-400'}`}>
-                                                <span>{formatTime(message.createdAt)}</span>
-                                                {message.role === 'assistant' && message.completionTime != null ? (
-                                                    <span>• {formatCompletionTime(message.completionTime)}</span>
-                                                ) : null}
-                                            </div>
-                                        </div>
+                                            return (
+                                                <div
+                                                    className={`max-w-[85%] rounded-3xl px-4 py-3 leading-relaxed shadow-lg ${isStream
+                                                        ? 'bg-[#0a0f18] text-slate-300 shadow-black/30 text-xs'
+                                                        : message.role === 'user'
+                                                            ? 'bg-[#49BBBD] text-white shadow-teal-900/20 text-sm'
+                                                            : 'bg-white text-slate-800 shadow-black/10 text-sm'
+                                                        }`}
+                                                >
+                                                    {message.isStreaming && !message.content ? (
+                                                        <div className="mb-2 flex items-center gap-2 text-xs text-slate-500">
+                                                            <Loader2 className="h-4 w-4 animate-spin text-[#49BBBD]" />
+                                                            Đang nhận luồng suy nghĩ từ backend...
+                                                        </div>
+                                                    ) : null}
+
+                                                    <ReactMarkdown
+                                                        components={{
+                                                            h1: ({ children }) => <h1 className={`mb-3 mt-4 ${isStream ? 'text-sm' : 'text-base'} font-bold first:mt-0`}>{children}</h1>,
+                                                            h2: ({ children }) => <h2 className={`mb-2 mt-3 ${isStream ? 'text-[13px]' : 'text-sm'} font-bold first:mt-0`}>{children}</h2>,
+                                                            h3: ({ children }) => <h3 className={`mb-2 mt-2 ${isStream ? 'text-[12px]' : 'text-sm'} font-semibold first:mt-0`}>{children}</h3>,
+                                                            h4: ({ children }) => <h4 className={`mb-2 mt-2 ${isStream ? 'text-[11px]' : 'text-xs'} font-semibold first:mt-0`}>{children}</h4>,
+                                                            h5: ({ children }) => <h5 className={`mb-1 mt-2 ${isStream ? 'text-[11px]' : 'text-xs'} font-semibold first:mt-0`}>{children}</h5>,
+                                                            h6: ({ children }) => <h6 className={`mb-1 mt-2 ${isStream ? 'text-[11px]' : 'text-xs'} font-semibold first:mt-0`}>{children}</h6>,
+                                                            p: ({ children }) => <p className={`mb-2 ${isStream ? 'text-xs' : ''} last:mb-0`}>{children}</p>,
+                                                            strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+                                                            em: ({ children }) => <em className="italic">{children}</em>,
+                                                            ul: ({ children }) => (
+                                                                <ul className="mb-1 list-disc space-y-0.5 pl-4 text-xs [&_ul]:mt-1 [&_ul]:list-circle [&_ul]:pl-4">
+                                                                    {children}
+                                                                </ul>
+                                                            ),
+                                                            ol: ({ children, start }) => (
+                                                                <ol start={start} className={`mb-2 list-decimal space-y-0.5 pl-5 ${isStream ? 'text-xs' : ''} [&_ol]:mt-1 [&_ol]:pl-5`}>
+                                                                    {children}
+                                                                </ol>
+                                                            ),
+                                                            li: ({ children }) => <li className="ml-1">{children}</li>,
+                                                            blockquote: ({ children }) => (
+                                                                <blockquote className={`mb-2 border-l-2 py-1 pl-3 italic ${message.role === 'user' ? 'border-white/60 text-white/90' : isStream ? 'border-slate-500 text-slate-400' : 'border-slate-300 text-slate-500'}`}>
+                                                                    {children}
+                                                                </blockquote>
+                                                            ),
+                                                            code: ({ children, className }) => {
+                                                                if (className) {
+                                                                    return (
+                                                                        <pre className={`mb-2 overflow-x-auto rounded p-3 ${isStream ? 'text-[11px]' : 'text-xs'} ${message.role === 'user' ? 'bg-black/25 text-white' : 'bg-slate-900 text-slate-100'}`}>
+                                                                            <code>{children}</code>
+                                                                        </pre>
+                                                                    );
+                                                                }
+
+                                                                return (
+                                                                    <code className={`rounded px-1.5 py-0.5 ${isStream ? 'text-[11px]' : 'text-xs'} ${message.role === 'user' ? 'bg-black/20 text-white' : 'bg-slate-100 text-slate-800'}`}>
+                                                                        {children}
+                                                                    </code>
+                                                                );
+                                                            },
+                                                            pre: ({ children }) => <pre className="mb-2 overflow-x-auto">{children}</pre>,
+                                                            a: ({ children, href }) => (
+                                                                <a
+                                                                    href={href}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className={`underline transition hover:opacity-80 ${message.role === 'user' ? 'text-cyan-100' : 'text-blue-600'}`}
+                                                                >
+                                                                    {children}
+                                                                </a>
+                                                            ),
+                                                            hr: () => <hr className={`my-2 ${message.role === 'user' ? 'border-white/30' : 'border-slate-300'}`} />,
+                                                            table: ({ children }) => (
+                                                                <table className={`mb-2 w-full border-collapse ${isStream ? 'text-[11px]' : 'text-xs'}`}>
+                                                                    {children}
+                                                                </table>
+                                                            ),
+                                                            thead: ({ children }) => <thead className={message.role === 'user' ? 'bg-black/15' : 'bg-slate-100'}>{children}</thead>,
+                                                            tbody: ({ children }) => <tbody>{children}</tbody>,
+                                                            tr: ({ children }) => <tr className={message.role === 'user' ? 'border border-white/30' : 'border border-slate-300'}>{children}</tr>,
+                                                            th: ({ children }) => (
+                                                                <th className={`border px-2 py-1 text-left font-semibold ${message.role === 'user' ? 'border-white/30' : 'border-slate-300'}`}>
+                                                                    {children}
+                                                                </th>
+                                                            ),
+                                                            td: ({ children }) => (
+                                                                <td className={`border px-2 py-1 ${message.role === 'user' ? 'border-white/30' : 'border-slate-300'}`}>
+                                                                    {children}
+                                                                </td>
+                                                            ),
+                                                        }}
+                                                    >
+                                                        {normalizeMarkdownContent(message.content)}
+                                                    </ReactMarkdown>
+
+                                                    <div className={`mt-2 flex items-center gap-2 text-[11px] ${message.role === 'user' ? 'text-white/80' : 'text-slate-400'}`}>
+                                                        <span>{formatTime(message.createdAt)}</span>
+                                                        {message.role === 'assistant' && message.completionTime != null ? (
+                                                            <span>• {formatCompletionTime(message.completionTime)}</span>
+                                                        ) : null}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 ))}
-
-                                {sending ? (
-                                    <div className="flex justify-start">
-                                        <div className="flex items-center gap-2 rounded-3xl bg-white px-4 py-3 text-sm text-slate-500 shadow-lg shadow-black/10">
-                                            <Loader2 className="h-4 w-4 animate-spin text-[#49BBBD]" />
-                                            Đang trả lời...
-                                        </div>
-                                    </div>
-                                ) : null}
 
                                 <div ref={bottomRef} />
                             </div>

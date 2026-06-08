@@ -112,6 +112,17 @@ export interface AiResponseDto {
   };
 }
 
+
+export interface AiStreamProgressEvent {
+  stage?: string;
+  message?: string;
+  data?: Record<string, unknown>;
+}
+
+export interface StreamChatHandlers {
+  onProgress?: (event: AiStreamProgressEvent) => void;
+  onFinal?: (response: AiResponseDto) => void;
+}
 export class AiConversationService {
   private baseURL: string;
 
@@ -196,6 +207,117 @@ export class AiConversationService {
     const api = this.createAxiosInstance();
     const response = await api.post<AiResponseDto>('/chat/direct', data);
     return response.data;
+  }
+
+  public async streamChat(
+    data: AiRequestDto,
+    handlers: StreamChatHandlers = {},
+  ): Promise<AiResponseDto> {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${this.baseURL}/ai/chat?stream=true`, {
+      method: 'POST',
+      headers: {
+        Authorization: token ? `Bearer ${token}` : '',
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error(`AI chat failed with status ${response.status}`);
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+
+    if (!response.body || !contentType.includes('text/event-stream')) {
+      return (await response.json()) as AiResponseDto;
+    }
+
+    const decoder = new TextDecoder('utf-8');
+    const reader = response.body.getReader();
+    let buffer = '';
+    let finalResponse: AiResponseDto | null = null;
+
+    const handleBlock = (rawBlock: string) => {
+      const block = rawBlock.trim();
+
+      if (!block) {
+        return;
+      }
+
+      const lines = block.split('\n');
+      let eventName = 'message';
+      const dataLines: string[] = [];
+
+      lines.forEach((line) => {
+        if (line.startsWith('event:')) {
+          eventName = line.slice(6).trim();
+          return;
+        }
+
+        if (line.startsWith('data:')) {
+          dataLines.push(line.slice(5).trimStart());
+        }
+      });
+
+      if (dataLines.length === 0) {
+        return;
+      }
+
+      const payloadText = dataLines.join('\n');
+
+      try {
+        const payload = JSON.parse(payloadText) as AiStreamProgressEvent | AiResponseDto;
+
+        if (eventName === 'progress') {
+          handlers.onProgress?.(payload as AiStreamProgressEvent);
+          return;
+        }
+
+        if (eventName === 'final') {
+          finalResponse = payload as AiResponseDto;
+          handlers.onFinal?.(finalResponse);
+        }
+      } catch (error) {
+        console.error('Failed to parse AI stream event:', error);
+      }
+    };
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
+
+        let separatorIndex = buffer.indexOf('\n\n');
+
+        while (separatorIndex >= 0) {
+          const block = buffer.slice(0, separatorIndex);
+          buffer = buffer.slice(separatorIndex + 2);
+          handleBlock(block);
+          separatorIndex = buffer.indexOf('\n\n');
+        }
+      }
+
+      buffer += decoder.decode().replace(/\r\n/g, '\n');
+
+      if (buffer.trim()) {
+        handleBlock(buffer);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    if (finalResponse) {
+      return finalResponse;
+    }
+
+    throw new Error('AI stream ended without a final response');
   }
 }
 

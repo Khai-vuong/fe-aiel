@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import aiConversationService from '../services/AiConversation.service.js';
 import type {
+  AiStreamProgressEvent,
   ConversationSummary,
   Message,
 } from '../services/AiConversation.service.js';
@@ -50,6 +51,40 @@ const normalizeMarkdownContent = (raw: string) => {
       return line;
     })
     .join('\n');
+};
+
+const formatStreamValue = (value: unknown): string => {
+  if (Array.isArray(value)) {
+    return value.map((item) => formatStreamValue(item)).filter(Boolean).join(', ');
+  }
+
+  if (value && typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+
+  return String(value);
+};
+
+const formatProgressBlock = (event: AiStreamProgressEvent) => {
+  const lines: string[] = [];
+
+  if (event.stage) {
+    lines.push(`**${event.stage}**`);
+  }
+
+  if (event.message) {
+    lines.push(event.message);
+  }
+
+  if (event.data && Object.keys(event.data).length > 0) {
+    lines.push(
+      Object.entries(event.data)
+        .map(([key, value]) => `${key}: ${formatStreamValue(value)}`)
+        .join(' · '),
+    );
+  }
+
+  return lines.join('\n');
 };
 
 // ─── Sub-components ─────────────────────────────────────────────────────────
@@ -214,8 +249,8 @@ function MessageBubble({ msg }: { msg: Message }) {
                   {children}
                 </ul>
               ),
-              ol: ({ children }) => (
-                <ol className="list-decimal list-outside mb-2 space-y-0.5 pl-5 [&_ol]:mt-1 [&_ol]:pl-5">
+              ol: ({ children, start }) => (
+                <ol start={start} className="list-decimal list-outside mb-2 space-y-0.5 pl-5 [&_ol]:mt-1 [&_ol]:pl-5">
                   {children}
                 </ol>
               ),
@@ -311,6 +346,112 @@ function MessageBubble({ msg }: { msg: Message }) {
   );
 }
 
+function StreamThoughtBubble({
+  content,
+  createdAt,
+}: {
+  content: string;
+  createdAt: string;
+}) {
+  const normalizedContent = normalizeMarkdownContent(content);
+  const hasContent = normalizedContent.trim().length > 0;
+
+  return (
+    <div className="flex justify-start">
+      <div className="max-w-[70%] rounded-2xl bg-[#0a0f18] px-4 py-3 text-xs leading-relaxed text-slate-300 shadow-sm shadow-black/30">
+        {!hasContent ? (
+          <div className="flex items-center gap-2 text-slate-500">
+            <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-500 border-t-transparent" />
+            Đang nhận luồng suy nghĩ từ backend...
+          </div>
+        ) : (
+          <ReactMarkdown
+            components={{
+              h1: ({ children }) => <h1 className="mb-2 mt-3 text-sm font-bold first:mt-0">{children}</h1>,
+              h2: ({ children }) => <h2 className="mb-2 mt-2 text-[13px] font-bold first:mt-0">{children}</h2>,
+              h3: ({ children }) => <h3 className="mb-1 mt-2 text-[12px] font-semibold first:mt-0">{children}</h3>,
+              h4: ({ children }) => <h4 className="mb-1 mt-1 text-[11px] font-semibold first:mt-0">{children}</h4>,
+              h5: ({ children }) => <h5 className="mb-1 mt-1 text-[11px] font-semibold first:mt-0">{children}</h5>,
+              h6: ({ children }) => <h6 className="mb-1 mt-1 text-[11px] font-semibold first:mt-0">{children}</h6>,
+              p: ({ children }) => <p className="mb-1 text-xs last:mb-0">{children}</p>,
+              strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+              em: ({ children }) => <em className="italic">{children}</em>,
+              ul: ({ children }) => (
+                <ul className="mb-1 list-disc space-y-0.5 pl-4 text-xs [&_ul]:mt-1 [&_ul]:list-circle [&_ul]:pl-4">
+                  {children}
+                </ul>
+              ),
+              ol: ({ children, start }) => (
+                <ol start={start} className="mb-1 list-decimal space-y-0.5 pl-4 text-xs [&_ol]:mt-1 [&_ol]:pl-4">
+                  {children}
+                </ol>
+              ),
+              li: ({ children }) => <li className="ml-1">{children}</li>,
+              blockquote: ({ children }) => (
+                <blockquote className="mb-1 border-l-2 border-slate-500 py-0.5 pl-3 italic text-slate-400">
+                  {children}
+                </blockquote>
+              ),
+              code: ({ children, className }) => {
+                if (className) {
+                  return (
+                    <pre className="mb-1 overflow-x-auto rounded bg-slate-900 p-2 text-[11px] text-slate-100">
+                      <code>{children}</code>
+                    </pre>
+                  );
+                }
+
+                return (
+                  <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-800">
+                    {children}
+                  </code>
+                );
+              },
+              pre: ({ children }) => <pre className="mb-2 overflow-x-auto">{children}</pre>,
+              a: ({ children, href }) => (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-slate-200 underline hover:opacity-80"
+                >
+                  {children}
+                </a>
+              ),
+              hr: () => <hr className="my-2 border-slate-600" />,
+              table: ({ children }) => (
+                <table className="mb-1 w-full border-collapse text-[11px]">
+                  {children}
+                </table>
+              ),
+              thead: ({ children }) => <thead className="bg-slate-800">{children}</thead>,
+              tbody: ({ children }) => <tbody>{children}</tbody>,
+              tr: ({ children }) => <tr className="border border-slate-600">{children}</tr>,
+              th: ({ children }) => (
+                <th className="border border-slate-600 px-2 py-1 text-left font-semibold">
+                  {children}
+                </th>
+              ),
+              td: ({ children }) => (
+                <td className="border border-slate-600 px-2 py-1">
+                  {children}
+                </td>
+              ),
+            }}
+          >
+            {normalizedContent}
+          </ReactMarkdown>
+        )}
+
+        <div className="mt-2 flex items-center gap-2 px-1 text-[10px] text-slate-500">
+          <span>{formatTime(createdAt)}</span>
+          <span>Thought</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Skeleton loader cho conversations */
 function ConversationSkeleton() {
   return (
@@ -369,6 +510,8 @@ export default function ChatPage() {
   // Input
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [streamThought, setStreamThought] = useState<string | null>(null);
+  const [streamThoughtCreatedAt, setStreamThoughtCreatedAt] = useState<string | null>(null);
 
   // Ref để auto-scroll
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -387,7 +530,7 @@ export default function ChatPage() {
       block: 'nearest',
       inline: 'nearest'
     });
-  }, [messages]);
+  }, [messages, streamThought]);
 
   // ── Fetch helpers ──
 
@@ -417,6 +560,8 @@ export default function ChatPage() {
   const fetchMessages = async (conversationId: string) => {
     try {
       setMsgLoading(true);
+      setStreamThought(null);
+      setStreamThoughtCreatedAt(null);
       setMessages([]);
 
       const res = await aiConversationService.getConversationMessages(
@@ -435,6 +580,8 @@ export default function ChatPage() {
   // ── Handlers ──
 
   const handleSelectConversation = (conv: ConversationSummary) => {
+    setStreamThought(null);
+    setStreamThoughtCreatedAt(null);
     setActiveConvId(conv.conversationId);
     fetchMessages(conv.conversationId);
   };
@@ -535,6 +682,8 @@ export default function ChatPage() {
     const userText = input.trim();
     setInput('');
     setSending(true);
+    setStreamThought('');
+    setStreamThoughtCreatedAt(new Date().toISOString());
 
     // Tạo temporary user message để hiển thị ngay
     const tempUserMessage: Message = {
@@ -556,16 +705,21 @@ export default function ChatPage() {
     setMessages(prev => [...prev, tempUserMessage]);
 
     try {
-      // Gọi API directChat
-      const res = await aiConversationService.sendChat({
-        text: userText,
-        conversationId: activeConvId ?? undefined,
-        provider: 'groq',
-        metadata: {
-          sendFrom: "ChatPage"
+      const res = await aiConversationService.streamChat(
+        {
+          text: userText,
+          conversationId: activeConvId ?? undefined,
+          provider: 'groq',
+          metadata: {
+            sendFrom: 'ChatPage',
+          },
         },
-
-      });
+        {
+          onProgress: (event) => {
+            setStreamThought(formatProgressBlock(event));
+          },
+        },
+      );
 
       if (!res.success) {
         throw new Error(res.error?.message ?? 'AI chat failed');
@@ -598,11 +752,15 @@ export default function ChatPage() {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      setStreamThought(null);
+      setStreamThoughtCreatedAt(null);
     } catch (error) {
       console.error('Send message error:', error);
       alert('Gửi tin nhắn thất bại');
       // Remove temp message nếu gửi thất bại
       setMessages(prev => prev.filter(m => m.messageId !== tempUserMessage.messageId));
+      setStreamThought(null);
+      setStreamThoughtCreatedAt(null);
     } finally {
       setSending(false);
     }
@@ -636,6 +794,8 @@ export default function ChatPage() {
               setActiveConvId(null);
               setMessages([]);
               setActiveTitle('');
+              setStreamThought(null);
+              setStreamThoughtCreatedAt(null);
             }}
             className="w-full flex items-center justify-center gap-2 py-2 rounded-xl
                        bg-[#49BBBD] text-white text-sm font-medium
@@ -729,6 +889,12 @@ export default function ChatPage() {
           ) : (
             messages.map(msg => <MessageBubble key={msg.messageId} msg={msg} />)
           )}
+          {sending && streamThought !== null ? (
+            <StreamThoughtBubble
+              content={streamThought}
+              createdAt={streamThoughtCreatedAt ?? new Date().toISOString()}
+            />
+          ) : null}
           <div ref={messagesEndRef} />
         </div>
 
