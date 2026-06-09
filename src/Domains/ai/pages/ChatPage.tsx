@@ -245,16 +245,16 @@ function MessageBubble({ msg }: { msg: Message }) {
 
               // Lists
               ul: ({ children }) => (
-                <ul className="list-disc list-outside mb-2 space-y-0.5 pl-5 [&_ul]:mt-1 [&_ul]:pl-5 [&_ul]:list-circle">
+                <ul className="list-disc list-outside mb-2 space-y-0.5 pl-5 text-[inherit] [&_ul]:mt-1 [&_ul]:pl-5 [&_ul]:list-circle">
                   {children}
                 </ul>
               ),
               ol: ({ children, start }) => (
-                <ol start={start} className="list-decimal list-outside mb-2 space-y-0.5 pl-5 [&_ol]:mt-1 [&_ol]:pl-5">
+                <ol start={start} className="list-decimal list-outside mb-2 space-y-0.5 pl-5 text-[inherit] [&_ol]:mt-1 [&_ol]:pl-5">
                   {children}
                 </ol>
               ),
-              li: ({ children }) => <li className="ml-1">{children}</li>,
+              li: ({ children }) => <li className="ml-1 text-[inherit] leading-relaxed">{children}</li>,
 
               // Blockquote
               blockquote: ({ children }) => (
@@ -377,16 +377,16 @@ function StreamThoughtBubble({
               strong: ({ children }) => <strong className="font-bold">{children}</strong>,
               em: ({ children }) => <em className="italic">{children}</em>,
               ul: ({ children }) => (
-                <ul className="mb-1 list-disc space-y-0.5 pl-4 text-xs [&_ul]:mt-1 [&_ul]:list-circle [&_ul]:pl-4">
+                <ul className="mb-1 list-disc space-y-0.5 pl-4 text-[inherit] [&_ul]:mt-1 [&_ul]:list-circle [&_ul]:pl-4">
                   {children}
                 </ul>
               ),
               ol: ({ children, start }) => (
-                <ol start={start} className="mb-1 list-decimal space-y-0.5 pl-4 text-xs [&_ol]:mt-1 [&_ol]:pl-4">
+                <ol start={start} className="mb-1 list-decimal space-y-0.5 pl-4 text-[inherit] [&_ol]:mt-1 [&_ol]:pl-4">
                   {children}
                 </ol>
               ),
-              li: ({ children }) => <li className="ml-1">{children}</li>,
+              li: ({ children }) => <li className="ml-1 text-[inherit] leading-relaxed">{children}</li>,
               blockquote: ({ children }) => (
                 <blockquote className="mb-1 border-l-2 border-slate-500 py-0.5 pl-3 italic text-slate-400">
                   {children}
